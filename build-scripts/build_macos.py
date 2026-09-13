@@ -70,7 +70,12 @@ def main():
     if not check_file_exists(app_file, "Built executable"):
         return 1
 
-    shutil.copy2(app_file, ARTIFACT_PATH)
+    if os.path.isdir(app_file):
+        if os.path.exists(ARTIFACT_PATH):
+            shutil.rmtree(ARTIFACT_PATH)
+        shutil.copytree(app_file, ARTIFACT_PATH)
+    else:
+        shutil.copy2(app_file, ARTIFACT_PATH)
     if not check_file_exists(ARTIFACT_PATH, "Staged installer artifact"):
         return 1
 

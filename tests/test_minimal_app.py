@@ -34,3 +34,35 @@ def test_main_entrypoint_inserts_src_on_sys_path():
     assert spec.loader is not None
     spec.loader.exec_module(module)
     assert str(main_path.parent.parent) in module.sys.path
+
+
+def test_main_executes_application_bootstrap(monkeypatch):
+    import src.tinforge_v2.main as main_module
+
+    class FakeApp:
+        def __init__(self, _args):
+            self.name = None
+            self.version = None
+
+        def setApplicationName(self, name):
+            self.name = name
+
+        def setApplicationVersion(self, version):
+            self.version = version
+
+        def exec_(self):
+            return 0
+
+    class FakeWindow:
+        shown = False
+
+        def show(self):
+            self.shown = True
+
+    fake_window = FakeWindow()
+
+    monkeypatch.setattr(main_module, "QApplication", FakeApp)
+    monkeypatch.setattr(main_module, "MainWindow", lambda: fake_window)
+
+    assert main_module.main() == 0
+    assert fake_window.shown is True
