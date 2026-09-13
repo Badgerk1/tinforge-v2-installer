@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-OUT_DIR="$ROOT/dist"
+OUT_DIR="${DIST_DIR:-$ROOT/dist}"
 APP_PATH="$OUT_DIR/tinforge-v2.app"
 DMG_PATH="$OUT_DIR/TinForge-v2.dmg"
 
