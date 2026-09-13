@@ -295,6 +295,7 @@ class MainWindow(QMainWindow):
         project.source_files = [item for item in project.source_files if str(item) != path]
         if project.project_path is not None:
             self.project_manager.save_project(project.project_path)
+            self._refresh_recent_projects_menu()
         self.statusBar().showMessage(f"Removed {Path(path).name}")
         self._update_project_views()
 
@@ -311,6 +312,7 @@ class MainWindow(QMainWindow):
         project_files = [path for path in urls if is_project_file(path)]
         if project_files:
             self.open_recent_project(project_files[0])
+            event.acceptProposedAction()
             return
         sources = [path for path in urls if is_supported_source(path)]
         if not sources:
@@ -324,3 +326,4 @@ class MainWindow(QMainWindow):
             self.project_manager.import_files(current.name, merged)
         self.statusBar().showMessage(f"Loaded {len(sources)} dropped files")
         self._update_project_views()
+        event.acceptProposedAction()

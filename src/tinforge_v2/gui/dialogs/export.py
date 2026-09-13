@@ -37,13 +37,11 @@ class _OptionsPage(QWizardPage):
     def __init__(self) -> None:
         super().__init__()
         self.setTitle("Configure export")
-        self.quality = QLineEdit("Standard", self)
         self.output_dir = QLineEdit(self)
         browse = QPushButton("Browse", self)
         browse.clicked.connect(self._choose_dir)
 
         layout = QFormLayout(self)
-        layout.addRow("Quality", self.quality)
         layout.addRow("Output folder", self.output_dir)
         layout.addRow("", browse)
 

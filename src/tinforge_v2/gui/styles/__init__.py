@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from importlib import resources
 
-_ROOT = Path(__file__).resolve().parent
 
-DARK_THEME = (_ROOT / "dark_theme.qss").read_text(encoding="utf-8")
-LIGHT_THEME = (_ROOT / "light_theme.qss").read_text(encoding="utf-8")
+def _read_theme(name: str) -> str:
+    return resources.files(__package__).joinpath(name).read_text(encoding="utf-8")
+
+
+DARK_THEME = _read_theme("dark_theme.qss")
+LIGHT_THEME = _read_theme("light_theme.qss")
 
 
 def load_theme(name: str) -> str:

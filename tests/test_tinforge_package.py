@@ -46,6 +46,7 @@ def test_version_manager_handles_prerelease_and_non_numeric_segments():
     assert VersionManager.is_newer("1.0.0", "1.0.0-rc1") is True
     assert VersionManager.is_newer("1.0rc1", "1.0.0") is False
     assert VersionManager.is_newer("1.0rc2", "1.0rc1") is True
+    assert VersionManager.is_newer("1.0rc2", "1.0-rc1") is True
 
 
 def test_package_assets_are_discoverable():

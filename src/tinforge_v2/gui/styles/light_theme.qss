@@ -5,3 +5,6 @@ QPushButton, QComboBox, QLineEdit, QTreeView, QTreeWidget, QListWidget, QTextEdi
   background-color: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px;
 }
 QPushButton:hover { background-color: #dbeafe; }
+QPushButton:focus, QComboBox:focus, QLineEdit:focus, QTreeView:focus, QTreeWidget:focus, QTextEdit:focus, QPlainTextEdit:focus {
+  border: 1px solid #2563eb;
+}

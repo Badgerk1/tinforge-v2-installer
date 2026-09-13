@@ -66,7 +66,7 @@ class FileBrowserWidget(QWidget):
         else:
             filters = []
         self.model.setNameFilters(filters or ["*"])
-        self.model.setNameFilterDisables(bool(filters))
+        self.model.setNameFilterDisables(not filters)
 
     def _activate_index(self, index: QModelIndex) -> None:
         path = self.model.filePath(index)
