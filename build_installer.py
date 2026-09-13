@@ -59,11 +59,19 @@ def build_windows(output_dir: Path) -> None:
     nsis = ROOT / "build" / "installers" / "windows" / "tinforge.nsi"
     if nsis.exists():
         subprocess.run(["makensis", str(nsis)], check=True, cwd=ROOT)
-    installer = ROOT / "TinForge-v2-Setup.exe"
-    if not installer.is_file():
-        raise FileNotFoundError(f"Expected Windows installer at: {installer}")
-    if installer.parent != output_dir:
-        copy2(installer, output_dir / installer.name)
+    installer_name = "TinForge-v2-Setup.exe"
+    installer_in_output = output_dir / installer_name
+    if installer_in_output.is_file():
+        return
+
+    installer_in_root = ROOT / installer_name
+    if installer_in_root.is_file():
+        copy2(installer_in_root, installer_in_output)
+        return
+
+    raise FileNotFoundError(
+        f"Expected Windows installer at one of: {installer_in_output}, {installer_in_root}"
+    )
 
 
 def build_macos(output_dir: Path) -> None:

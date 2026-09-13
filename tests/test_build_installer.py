@@ -61,6 +61,18 @@ def test_build_macos_uses_output_dir_for_packaging(monkeypatch, tmp_path):
     assert calls[0][3]["DIST_DIR"] == str(output_dir)
 
 
+def test_build_macos_fails_when_installer_missing(monkeypatch, tmp_path):
+    output_dir = tmp_path / "dist-out"
+    output_dir.mkdir()
+
+    monkeypatch.setattr(build_installer, "run_pyinstaller", lambda _output_dir: None)
+    monkeypatch.setattr(build_installer, "ROOT", tmp_path)
+    monkeypatch.setattr(build_installer.subprocess, "run", lambda *_args, **_kwargs: None)
+
+    with pytest.raises(FileNotFoundError, match="Expected macOS DMG"):
+        build_installer.build_macos(output_dir)
+
+
 def test_build_windows_copies_nsis_output_to_output_dir(monkeypatch, tmp_path):
     output_dir = tmp_path / "dist-out"
     output_dir.mkdir()
@@ -87,3 +99,15 @@ def test_build_windows_fails_when_installer_missing(monkeypatch, tmp_path):
 
     with pytest.raises(FileNotFoundError, match="Expected Windows installer"):
         build_installer.build_windows(output_dir)
+
+
+def test_build_linux_fails_when_installer_missing(monkeypatch, tmp_path):
+    output_dir = tmp_path / "dist-out"
+    output_dir.mkdir()
+
+    monkeypatch.setattr(build_installer, "run_pyinstaller", lambda _output_dir: None)
+    monkeypatch.setattr(build_installer, "ROOT", tmp_path)
+    monkeypatch.setattr(build_installer.subprocess, "run", lambda *_args, **_kwargs: None)
+
+    with pytest.raises(FileNotFoundError, match="Expected Linux AppImage"):
+        build_installer.build_linux(output_dir)
