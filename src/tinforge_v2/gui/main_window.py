@@ -326,4 +326,7 @@ class MainWindow(QMainWindow):
         existing = [str(path) for path in current.source_files]
         merged = existing + [path for path in sources if path not in existing]
         current.source_files = [Path(path) for path in merged]
+        if current.project_path is not None:
+            self.project_manager.save_project(current.project_path)
+            self._refresh_recent_projects_menu()
         return current

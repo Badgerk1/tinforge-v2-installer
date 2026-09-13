@@ -9,11 +9,11 @@ import sys
 from PyQt5.QtWidgets import QApplication
 
 try:  # pragma: no cover - import path depends on how the app is launched
-    from tinforge_v2.core.config import load_config
+    from tinforge_v2.core.config import ConfigManager
     from tinforge_v2.gui.main_window import MainWindow
     from tinforge_v2.utils.logger import setup_logger
 except ImportError:  # pragma: no cover
-    from src.tinforge_v2.core.config import load_config
+    from src.tinforge_v2.core.config import ConfigManager
     from src.tinforge_v2.gui.main_window import MainWindow
     from src.tinforge_v2.utils.logger import setup_logger
 
@@ -28,14 +28,15 @@ def setup_logging(config: dict[str, object] | None = None) -> logging.Logger:
 
 def main() -> int:
     """Main application entry point."""
-    config = load_config()
+    config_manager = ConfigManager()
+    config = config_manager.load()
     logger = setup_logging(config)
     logger.info("Starting TinForge v2 Installer")
 
     app = QApplication(sys.argv)
     app.setApplicationName("TinForge v2")
     app.setApplicationVersion("1.0.0")
-    window = MainWindow(config=config)
+    window = MainWindow(config=config, config_manager=config_manager)
     window.show()
 
     return app.exec_()

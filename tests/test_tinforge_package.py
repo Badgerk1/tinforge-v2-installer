@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QApplication
 
 from src.tinforge_v2.core.config import ConfigManager
 from src.tinforge_v2.core.project import ProjectManager
+from src.tinforge_v2.core.project import Project
 from src.tinforge_v2.core.version import VersionManager
 from src.tinforge_v2.gui.main_window import MainWindow
 from src.tinforge_v2.gui.styles import DARK_THEME, LIGHT_THEME, load_theme
@@ -171,5 +172,97 @@ def test_drop_event_merges_supported_source_files(tmp_path: Path):
     assert window.project_manager.current_project.name == "Demo"
     assert window.project_manager.current_project.source_files == [source_a, source_b]
     assert event.accepted is True
+    window.close()
+    app.quit()
+
+
+def test_drag_enter_event_accepts_supported_sources(tmp_path: Path):
+    app = QApplication.instance() or QApplication([])
+    config = ConfigManager(settings_path=tmp_path / "settings.json")
+    source = tmp_path / "a.csv"
+    source.write_text("a", encoding="utf-8")
+    window = MainWindow(config=config.load(), config_manager=config)
+
+    class _Url:
+        def __init__(self, path: Path) -> None:
+            self._path = path
+
+        def toLocalFile(self) -> str:
+            return str(self._path)
+
+    class _Mime:
+        def __init__(self, paths: list[Path]) -> None:
+            self._paths = paths
+
+        def hasUrls(self) -> bool:
+            return True
+
+        def urls(self):
+            return [_Url(path) for path in self._paths]
+
+    class _Event:
+        def __init__(self, paths: list[Path]) -> None:
+            self._mime = _Mime(paths)
+            self.accepted = False
+
+        def mimeData(self):
+            return self._mime
+
+        def acceptProposedAction(self) -> None:
+            self.accepted = True
+
+        def ignore(self) -> None:
+            self.accepted = False
+
+    event = _Event([source])
+    window.dragEnterEvent(event)
+
+    assert event.accepted is True
+    window.close()
+    app.quit()
+
+
+def test_drag_enter_event_rejects_unsupported_sources(tmp_path: Path):
+    app = QApplication.instance() or QApplication([])
+    config = ConfigManager(settings_path=tmp_path / "settings.json")
+    source = tmp_path / "a.unsupported"
+    source.write_text("a", encoding="utf-8")
+    window = MainWindow(config=config.load(), config_manager=config)
+
+    class _Url:
+        def __init__(self, path: Path) -> None:
+            self._path = path
+
+        def toLocalFile(self) -> str:
+            return str(self._path)
+
+    class _Mime:
+        def __init__(self, paths: list[Path]) -> None:
+            self._paths = paths
+
+        def hasUrls(self) -> bool:
+            return True
+
+        def urls(self):
+            return [_Url(path) for path in self._paths]
+
+    class _Event:
+        def __init__(self, paths: list[Path]) -> None:
+            self._mime = _Mime(paths)
+            self.accepted = True
+
+        def mimeData(self):
+            return self._mime
+
+        def acceptProposedAction(self) -> None:
+            self.accepted = True
+
+        def ignore(self) -> None:
+            self.accepted = False
+
+    event = _Event([source])
+    window.dragEnterEvent(event)
+
+    assert event.accepted is False
     window.close()
     app.quit()

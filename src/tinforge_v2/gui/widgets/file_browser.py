@@ -67,8 +67,8 @@ class FileBrowserWidget(QWidget):
             filters = ["*.tinforge-project.json"]
         else:
             filters = []
-        self.model.setNameFilters(filters or ["*"])
-        self.model.setNameFilterDisables(not filters)
+        self.model.setNameFilters(filters)
+        self.model.setNameFilterDisables(False)
 
     def _activate_index(self, index: QModelIndex) -> None:
         path = self.model.filePath(index)
