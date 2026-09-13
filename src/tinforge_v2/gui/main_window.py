@@ -313,6 +313,12 @@ class MainWindow(QMainWindow):
         sources = [path for path in urls if is_supported_source(path)]
         if not sources:
             return
-        self.project_manager.import_files(Path(sources[0]).stem, sources)
+        current = self.project_manager.current_project
+        if current is None:
+            self.project_manager.import_files(Path(sources[0]).stem, sources)
+        else:
+            existing = [str(path) for path in current.source_files]
+            merged = existing + [path for path in sources if path not in existing]
+            self.project_manager.import_files(current.name, merged)
         self.statusBar().showMessage(f"Loaded {len(sources)} dropped files")
         self._update_project_views()

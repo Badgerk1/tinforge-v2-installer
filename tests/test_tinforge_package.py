@@ -2,7 +2,7 @@ from pathlib import Path
 
 from src.tinforge_v2.core.config import ConfigManager
 from src.tinforge_v2.core.project import ProjectManager
-from src.tinforge_v2.gui.styles import DARK_THEME, LIGHT_THEME
+from src.tinforge_v2.gui.styles import DARK_THEME, LIGHT_THEME, load_theme
 
 
 def test_config_manager_persists_recent_projects(tmp_path: Path):
@@ -34,3 +34,5 @@ def test_project_manager_saves_and_loads_project(tmp_path: Path):
 def test_stylesheets_cover_both_themes():
     assert "QMainWindow" in DARK_THEME
     assert "QMainWindow" in LIGHT_THEME
+    assert load_theme("light") == LIGHT_THEME
+    assert load_theme("anything-else") == DARK_THEME

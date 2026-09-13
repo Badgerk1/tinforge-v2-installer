@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -34,10 +35,14 @@ class VersionManager:
 
     @staticmethod
     def is_newer(candidate: str, current: str) -> bool:
+        def _numeric_prefix(segment: str) -> int:
+            match = re.match(r"(\d+)", segment)
+            return int(match.group(1)) if match else 0
+
         def _parse(value: str) -> tuple[tuple[int, ...], tuple[str, ...]]:
             normalized = value.lstrip("v").split("+")[0]
             core, _, prerelease = normalized.partition("-")
-            core_parts = tuple(int(part) for part in core.split("."))
+            core_parts = tuple(_numeric_prefix(part) for part in core.split("."))
             prerelease_parts = tuple(segment for segment in prerelease.split(".") if segment) if prerelease else ()
             return core_parts, prerelease_parts
 

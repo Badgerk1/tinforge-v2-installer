@@ -25,6 +25,7 @@ class FileBrowserWidget(QWidget):
         self.location = QLineEdit(str(Path.home()), self)
         self.filter_box = QComboBox(self)
         self.filter_box.addItems(["All files", "Data files", "Project files"])
+        self.filter_box.currentTextChanged.connect(self.apply_filter)
         self.go_button = QPushButton("Go", self)
         self.go_button.clicked.connect(self.set_root_path)
 
@@ -47,12 +48,24 @@ class FileBrowserWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.addLayout(controls)
         layout.addWidget(self.view)
+        self.apply_filter()
 
     def set_root_path(self) -> None:
         path = Path(self.location.text().strip() or Path.home())
         if not path.exists():
             return
         self.view.setRootIndex(self.model.index(str(path)))
+
+    def apply_filter(self) -> None:
+        selected = self.filter_box.currentText()
+        if selected == "Data files":
+            filters = ["*.csv", "*.pdf", "*.txt", "*.xml", "*.dxf", "*.dbx", "*.tp3"]
+        elif selected == "Project files":
+            filters = ["*.tinforge-project.json"]
+        else:
+            filters = []
+        self.model.setNameFilters(filters)
+        self.model.setNameFilterDisables(False)
 
     def _activate_index(self, index: QModelIndex) -> None:
         path = self.model.filePath(index)

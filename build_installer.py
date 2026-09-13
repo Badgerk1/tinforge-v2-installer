@@ -60,19 +60,9 @@ def build_linux(output_dir: Path) -> None:
     if appimage_script.exists():
         subprocess.run(["bash", str(appimage_script)], check=True, cwd=ROOT)
 
-    executable = output_dir / "tinforge-v2" / "tinforge-v2"
-    if not executable.exists():
-        raise FileNotFoundError(f"Expected Linux executable at: {executable}")
-
     artifact = output_dir / "TinForge-v2.AppImage"
-    artifact.write_text(
-        "#!/usr/bin/env bash\n"
-        "set -euo pipefail\n"
-        "SELF_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"\n"
-        "exec \"$SELF_DIR/tinforge-v2/tinforge-v2\" \"$@\"\n",
-        encoding="utf-8",
-    )
-    artifact.chmod(artifact.stat().st_mode | 0o111)
+    if not artifact.exists():
+        raise FileNotFoundError(f"Expected Linux AppImage at: {artifact}")
 
 
 def stamp_artifacts(output_dir: Path, version: str) -> None:
