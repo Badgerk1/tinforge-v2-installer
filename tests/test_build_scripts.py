@@ -30,6 +30,12 @@ def test_run_command_returns_false_on_failure(monkeypatch):
     assert utils.run_command(["bad"]) is False
 
 
+def test_run_command_returns_true_on_success(monkeypatch):
+    utils = _load_script("utils")
+    monkeypatch.setattr(utils.subprocess, "run", lambda *_args, **_kwargs: SimpleNamespace(returncode=0))
+    assert utils.run_command(["ok"]) is True
+
+
 def test_windows_build_returns_error_when_spec_missing(monkeypatch, tmp_path):
     module = _load_script("build_windows")
     monkeypatch.chdir(tmp_path)
@@ -54,7 +60,7 @@ def test_windows_build_stages_non_smoke_artifact(monkeypatch, tmp_path):
     (tmp_path / "build/pyinstaller/tinforge_v2.spec").write_text("", encoding="utf-8")
     (tmp_path / "src/tinforge_v2/main.py").write_text("", encoding="utf-8")
     (tmp_path / "dist").mkdir()
-    (tmp_path / "dist/TinForge-v2.exe").write_text("exe", encoding="utf-8")
+    (tmp_path / "dist/TinForge-v2-Setup.exe").write_text("exe", encoding="utf-8")
 
     monkeypatch.setattr(module, "parse_args", lambda: SimpleNamespace(skip_build=True, smoke_test=False))
     monkeypatch.setattr(module, "check_python_version", lambda: True)
@@ -80,7 +86,7 @@ def test_macos_build_stages_non_smoke_artifact(monkeypatch, tmp_path):
     (tmp_path / "build/pyinstaller/tinforge_v2.spec").write_text("", encoding="utf-8")
     (tmp_path / "src/tinforge_v2/main.py").write_text("", encoding="utf-8")
     (tmp_path / "dist").mkdir()
-    (tmp_path / "dist/TinForge-v2").write_text("mac", encoding="utf-8")
+    (tmp_path / "dist/TinForge-v2.dmg").write_text("mac", encoding="utf-8")
 
     monkeypatch.setattr(module, "parse_args", lambda: SimpleNamespace(skip_build=True, smoke_test=False))
     monkeypatch.setattr(module, "check_python_version", lambda: True)
@@ -106,7 +112,7 @@ def test_linux_build_stages_non_smoke_artifact_and_sets_executable(monkeypatch, 
     (tmp_path / "build/pyinstaller/tinforge_v2.spec").write_text("", encoding="utf-8")
     (tmp_path / "src/tinforge_v2/main.py").write_text("", encoding="utf-8")
     (tmp_path / "dist").mkdir()
-    (tmp_path / "dist/TinForge-v2").write_text("linux", encoding="utf-8")
+    (tmp_path / "dist/TinForge-v2.AppImage").write_text("linux", encoding="utf-8")
 
     monkeypatch.setattr(module, "parse_args", lambda: SimpleNamespace(skip_build=True, smoke_test=False))
     monkeypatch.setattr(module, "check_python_version", lambda: True)

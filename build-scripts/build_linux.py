@@ -9,6 +9,7 @@ from utils import check_file_exists, check_python_version, run_command
 
 
 ARTIFACT_PATH = ".artifacts/TinForge-v2.AppImage"
+BUILT_INSTALLER_PATH = "dist/TinForge-v2.AppImage"
 
 
 def parse_args():
@@ -52,27 +53,24 @@ def main():
         return 1
 
     if not args.skip_build:
-        print("\nRunning PyInstaller...")
+        print("\nRunning installer build...")
         if not run_command(
             [
                 sys.executable,
-                "-m",
-                "PyInstaller",
-                spec_file,
-                "--clean",
-                "--onefile",
+                "build_installer.py",
+                "--platform",
+                "linux",
+                "--output",
+                "dist",
             ]
         ):
-            print("ERROR: PyInstaller failed")
+            print("ERROR: Installer build failed")
             return 1
 
-    candidates = ["dist/TinForge-v2.AppImage", "dist/TinForge-v2"]
-    app_file = next((path for path in candidates if os.path.exists(path)), None)
-    if app_file is None:
-        print("ERROR: Built executable not found in expected Linux output paths")
+    if not check_file_exists(BUILT_INSTALLER_PATH, "Built installer"):
         return 1
 
-    shutil.copy2(app_file, ARTIFACT_PATH)
+    shutil.copy2(BUILT_INSTALLER_PATH, ARTIFACT_PATH)
     mode = os.stat(ARTIFACT_PATH).st_mode
     os.chmod(ARTIFACT_PATH, mode | 0o111)
     if not check_file_exists(ARTIFACT_PATH, "Staged installer artifact"):
