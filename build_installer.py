@@ -45,7 +45,7 @@ def ensure_prerequisites(target_platform: str) -> None:
         raise RuntimeError("PyInstaller is not installed in the active Python environment.")
     try:
         subprocess.run([sys.executable, "-m", "PyInstaller", "--version"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    except subprocess.CalledProcessError as error:
+    except (subprocess.CalledProcessError, FileNotFoundError) as error:
         raise RuntimeError("PyInstaller failed to execute in the active Python environment.") from error
     if not SPEC.is_file():
         raise FileNotFoundError(f"Expected PyInstaller spec file at: {SPEC}")

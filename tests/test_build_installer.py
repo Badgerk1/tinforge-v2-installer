@@ -106,6 +106,21 @@ def test_build_windows_fails_when_installer_missing(monkeypatch, tmp_path):
         build_installer.build_windows(output_dir)
 
 
+def test_build_windows_uses_installer_already_in_output_dir(monkeypatch, tmp_path):
+    output_dir = tmp_path / "dist-out"
+    output_dir.mkdir()
+    installer = output_dir / "TinForge-v2-Setup.exe"
+    installer.write_text("exe", encoding="utf-8")
+
+    monkeypatch.setattr(build_installer, "run_pyinstaller", lambda _output_dir: None)
+    monkeypatch.setattr(build_installer, "ROOT", tmp_path)
+    monkeypatch.setattr(build_installer, "WINDOWS_NSIS", tmp_path / "tinforge.nsi")
+    monkeypatch.setattr(build_installer.subprocess, "run", lambda *_args, **_kwargs: None)
+
+    build_installer.build_windows(output_dir)
+    assert installer.read_text(encoding="utf-8") == "exe"
+
+
 def test_build_linux_fails_when_installer_missing(monkeypatch, tmp_path):
     output_dir = tmp_path / "dist-out"
     output_dir.mkdir()
