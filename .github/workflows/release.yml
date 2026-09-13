@@ -1,34 +1,64 @@
-name: Release
+name: Release Coordinator
 
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
 jobs:
-  publish:
-    runs-on: ${{ matrix.os }}
+  build_windows:
+    uses: ./.github/workflows/build-windows.yml
+    secrets: inherit
+
+  build_macos:
+    uses: ./.github/workflows/build-macos.yml
+    secrets: inherit
+
+  build_linux:
+    uses: ./.github/workflows/build-linux.yml
+    secrets: inherit
+
+  release:
+    runs-on: ubuntu-latest
+    needs: [build_windows, build_macos, build_linux]
     permissions:
       contents: write
-    strategy:
-      matrix:
-        include:
-          - os: windows-latest
-            target: windows
-          - os: macos-latest
-            target: macos
-          - os: ubuntu-latest
-            target: linux
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-      - run: pip install -r requirements-build.txt
-      - run: pip install -r requirements.txt
-      - run: python build_installer.py --platform ${{ matrix.target }}
-      - name: Upload release artifacts
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.ref_name }}
+          python-version: "3.11"
+
+      - name: Download installer artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*-installer"
+          merge-multiple: true
+          path: .artifacts
+
+      - name: Prepare release metadata
         run: |
-          python -c "from pathlib import Path; import os, subprocess; files=[str(p) for p in Path('dist').glob('*') if p.is_file()]; root=Path('TinForge-v2-Setup.exe'); files += [str(root)] if root.is_file() else []; assert files, 'No release artifacts found'; subprocess.run(['gh','release','upload',os.environ['RELEASE_TAG'],*files,'--clobber'], check=True)"
+          python -m pip install -r requirements-build.txt
+          python -m pip install -r requirements.txt
+          python build-scripts/create_release.py --version "${{ github.event.release.tag_name || github.ref_name }}"
+
+      - name: Verify checksums
+        run: (cd .artifacts && sha256sum -c SHA256SUMS.txt)
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name || github.ref_name }}
+          body_path: .artifacts/RELEASE_NOTES.md
+          files: |
+            .artifacts/TinForge-v2-Setup.exe
+            .artifacts/TinForge-v2.dmg
+            .artifacts/TinForge-v2.AppImage
+            .artifacts/SHA256SUMS.txt
+          overwrite_files: true
+          fail_on_unmatched_files: true
+
+      - name: Notify completion
+        run: |
+          echo "Release coordination complete for ${{ github.event.release.tag_name || github.ref_name }}"
+          echo "All platform installers uploaded with checksums."

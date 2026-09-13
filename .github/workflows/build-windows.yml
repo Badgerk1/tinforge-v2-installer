@@ -1,0 +1,45 @@
+name: Build Windows Installer
+
+on:
+  workflow_dispatch:
+  workflow_call:
+  push:
+    branches: [develop]
+    tags: ["v*", "V*"]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Setup build environment
+        shell: bash
+        run: bash .github/workflows/common/setup-build-env.sh windows
+
+      - name: Build installer
+        shell: bash
+        run: |
+          mkdir -p .artifacts/logs
+          python build-scripts/build_windows.py 2>&1 | tee .artifacts/logs/build-windows.log
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: |
+            .artifacts/TinForge-v2-Setup.exe
+            .artifacts/logs/build-windows.log
+
+      - name: Upload to GitHub release (tag builds)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: .artifacts/TinForge-v2-Setup.exe
+          fail_on_unmatched_files: true
+          overwrite_files: true
