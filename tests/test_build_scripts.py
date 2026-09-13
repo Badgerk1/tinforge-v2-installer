@@ -146,6 +146,23 @@ def test_windows_build_non_smoke_copies_expected_artifact(windows_build_module, 
     assert destination.read_text(encoding="utf-8") == "binary"
 
 
+def test_windows_build_smoke_creates_placeholder(windows_build_module, tmp_path, monkeypatch):
+    root_dir = tmp_path / "repo"
+    root_dir.mkdir()
+    artifact_dir = tmp_path / "artifacts"
+
+    monkeypatch.setattr(
+        windows_build_module,
+        "parse_args",
+        lambda: SimpleNamespace(skip_build=True, smoke_test=True),
+    )
+    monkeypatch.setattr(windows_build_module, "ROOT_DIR", root_dir)
+    monkeypatch.setattr(windows_build_module, "ARTIFACTS_DIR", artifact_dir)
+
+    windows_build_module.main()
+    assert (artifact_dir / "TinForge-v2-Setup.exe").read_text(encoding="utf-8") == "windows-smoke-artifact"
+
+
 def test_macos_build_non_smoke_copies_expected_artifact(macos_build_module, tmp_path, monkeypatch):
     root_dir = tmp_path / "repo"
     dist_dir = root_dir / "dist"
@@ -171,6 +188,24 @@ def test_macos_build_non_smoke_copies_expected_artifact(macos_build_module, tmp_
     assert destination.read_text(encoding="utf-8") == "dmg"
 
 
+def test_macos_build_smoke_creates_placeholder(macos_build_module, tmp_path, monkeypatch):
+    root_dir = tmp_path / "repo"
+    root_dir.mkdir()
+    artifact_dir = tmp_path / "artifacts"
+
+    monkeypatch.setattr(
+        macos_build_module,
+        "parse_args",
+        lambda: SimpleNamespace(skip_build=True, smoke_test=True),
+    )
+    monkeypatch.setattr(macos_build_module, "ROOT_DIR", root_dir)
+    monkeypatch.setattr(macos_build_module, "DIST_DIR", root_dir / "dist")
+    monkeypatch.setattr(macos_build_module, "ARTIFACTS_DIR", artifact_dir)
+
+    macos_build_module.main()
+    assert (artifact_dir / "TinForge-v2.dmg").read_text(encoding="utf-8") == "macos-smoke-artifact"
+
+
 def test_linux_build_non_smoke_copies_and_sets_executable(linux_build_module, tmp_path, monkeypatch):
     root_dir = tmp_path / "repo"
     dist_dir = root_dir / "dist"
@@ -194,4 +229,24 @@ def test_linux_build_non_smoke_copies_and_sets_executable(linux_build_module, tm
     assert result == 0
     assert destination.exists()
     assert destination.read_text(encoding="utf-8") == "appimage"
+    assert destination.stat().st_mode & 0o111
+
+
+def test_linux_build_smoke_creates_executable_placeholder(linux_build_module, tmp_path, monkeypatch):
+    root_dir = tmp_path / "repo"
+    root_dir.mkdir()
+    artifact_dir = tmp_path / "artifacts"
+
+    monkeypatch.setattr(
+        linux_build_module,
+        "parse_args",
+        lambda: SimpleNamespace(skip_build=True, smoke_test=True),
+    )
+    monkeypatch.setattr(linux_build_module, "ROOT_DIR", root_dir)
+    monkeypatch.setattr(linux_build_module, "DIST_DIR", root_dir / "dist")
+    monkeypatch.setattr(linux_build_module, "ARTIFACTS_DIR", artifact_dir)
+
+    linux_build_module.main()
+    destination = artifact_dir / "TinForge-v2.AppImage"
+    assert destination.read_text(encoding="utf-8") == "linux-smoke-artifact"
     assert destination.stat().st_mode & 0o111
