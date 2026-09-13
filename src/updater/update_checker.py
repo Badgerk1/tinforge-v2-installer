@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import platform
 from dataclasses import dataclass
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
@@ -34,10 +35,7 @@ class UpdateChecker:
             return None
 
         if VersionManager.is_newer(candidate, current_version):
-            assets = payload.get("assets") or []
-            download_url = ""
-            if assets:
-                download_url = str(assets[0].get("browser_download_url", ""))
+            download_url = self._select_asset_url(payload.get("assets") or [])
             if not download_url:
                 download_url = str(payload.get("html_url", ""))
             return UpdateInfo(
@@ -46,3 +44,18 @@ class UpdateChecker:
                 notes=str(payload.get("body", "")).strip(),
             )
         return None
+
+    @staticmethod
+    def _select_asset_url(assets: list[dict]) -> str:
+        system = platform.system().lower()
+        suffixes = {
+            "windows": (".exe",),
+            "darwin": (".dmg", ".pkg"),
+            "linux": (".appimage", ".deb", ".rpm"),
+        }.get(system, (".exe", ".dmg", ".appimage"))
+
+        for asset in assets:
+            name = str(asset.get("name", "")).lower()
+            if name.endswith(suffixes):
+                return str(asset.get("browser_download_url", ""))
+        return ""

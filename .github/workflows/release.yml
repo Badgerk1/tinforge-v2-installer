@@ -27,18 +27,8 @@ jobs:
       - run: pip install -r requirements.txt
       - run: python build_installer.py --platform ${{ matrix.target }}
       - name: Upload release artifacts
-        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          set -euo pipefail
-          tag="${GITHUB_REF_NAME}"
-          mapfile -t files < <(find dist -maxdepth 1 -type f)
-          if [[ -f TinForge-v2-Setup.exe ]]; then
-            files+=("TinForge-v2-Setup.exe")
-          fi
-          if [[ "${#files[@]}" -eq 0 ]]; then
-            echo "No release artifacts found"
-            exit 1
-          fi
-          gh release upload "$tag" "${files[@]}" --clobber
+          python -c "from pathlib import Path; import os, subprocess; files=[str(p) for p in Path('dist').glob('*') if p.is_file()]; root=Path('TinForge-v2-Setup.exe'); files += [str(root)] if root.is_file() else []; assert files, 'No release artifacts found'; subprocess.run(['gh','release','upload',os.environ['RELEASE_TAG'],*files,'--clobber'], check=True)"

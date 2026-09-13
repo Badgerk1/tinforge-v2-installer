@@ -34,13 +34,45 @@ class VersionManager:
 
     @staticmethod
     def is_newer(candidate: str, current: str) -> bool:
-        def _parts(value: str) -> tuple[int, ...]:
-            normalized = value.lstrip("v").split("-")[0].split("+")[0]
-            return tuple(int(part) for part in normalized.split("."))
+        def _parse(value: str) -> tuple[tuple[int, ...], tuple[str, ...]]:
+            normalized = value.lstrip("v").split("+")[0]
+            core, _, prerelease = normalized.partition("-")
+            core_parts = tuple(int(part) for part in core.split("."))
+            prerelease_parts = tuple(segment for segment in prerelease.split(".") if segment) if prerelease else ()
+            return core_parts, prerelease_parts
 
-        candidate_parts = _parts(candidate)
-        current_parts = _parts(current)
-        width = max(len(candidate_parts), len(current_parts))
-        padded_candidate = candidate_parts + (0,) * (width - len(candidate_parts))
-        padded_current = current_parts + (0,) * (width - len(current_parts))
-        return padded_candidate > padded_current
+        def _compare_prerelease(left: tuple[str, ...], right: tuple[str, ...]) -> int:
+            if not left and not right:
+                return 0
+            if not left:
+                return 1
+            if not right:
+                return -1
+
+            size = max(len(left), len(right))
+            for index in range(size):
+                if index >= len(left):
+                    return -1
+                if index >= len(right):
+                    return 1
+                l_value = left[index]
+                r_value = right[index]
+                if l_value == r_value:
+                    continue
+                l_is_num = l_value.isdigit()
+                r_is_num = r_value.isdigit()
+                if l_is_num and r_is_num:
+                    return 1 if int(l_value) > int(r_value) else -1
+                if l_is_num != r_is_num:
+                    return -1 if l_is_num else 1
+                return 1 if l_value > r_value else -1
+            return 0
+
+        candidate_core, candidate_pre = _parse(candidate)
+        current_core, current_pre = _parse(current)
+        width = max(len(candidate_core), len(current_core))
+        padded_candidate = candidate_core + (0,) * (width - len(candidate_core))
+        padded_current = current_core + (0,) * (width - len(current_core))
+        if padded_candidate != padded_current:
+            return padded_candidate > padded_current
+        return _compare_prerelease(candidate_pre, current_pre) > 0
