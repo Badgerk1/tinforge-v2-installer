@@ -3,18 +3,26 @@ name: Release Coordinator
 on:
   release:
     types: [published]
+  push:
+    tags: ["v*", "V*"]
   workflow_dispatch:
 
 jobs:
   build_windows:
+    permissions:
+      contents: read
     uses: ./.github/workflows/build-windows.yml
     secrets: inherit
 
   build_macos:
+    permissions:
+      contents: read
     uses: ./.github/workflows/build-macos.yml
     secrets: inherit
 
   build_linux:
+    permissions:
+      contents: read
     uses: ./.github/workflows/build-linux.yml
     secrets: inherit
 

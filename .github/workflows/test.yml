@@ -25,7 +25,7 @@ jobs:
           python -m pip install -r requirements.txt
 
       - name: Unit tests
-        run: python -m pytest tests/test_app_manager.py tests/test_updater.py
+        run: python -m pytest tests/test_app_manager.py tests/test_updater.py tests/test_build_scripts.py
 
       - name: Integration tests
         run: python -m pytest tests/test_integration.py tests/test_gui.py
