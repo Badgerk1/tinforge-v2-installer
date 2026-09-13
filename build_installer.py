@@ -6,8 +6,8 @@ import argparse
 import os
 import platform
 import subprocess
+import sys
 from pathlib import Path
-from shutil import which
 from shutil import copy2
 
 ROOT = Path(__file__).resolve().parent
@@ -37,8 +37,15 @@ def resolve_platform(target: str) -> str:
 
 
 def ensure_prerequisites() -> None:
-    if which("pyinstaller") is None:
-        raise RuntimeError("PyInstaller is not installed or not available on PATH.")
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "PyInstaller", "--version"],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except subprocess.CalledProcessError as error:
+        raise RuntimeError("PyInstaller is not installed in the active Python environment.") from error
     if not SPEC.is_file():
         raise FileNotFoundError(f"Expected PyInstaller spec file at: {SPEC}")
     if not ENTRYPOINT.is_file():
@@ -51,7 +58,7 @@ def run_pyinstaller(output_dir: Path) -> None:
     env = os.environ.copy()
     env["PYINSTALLER_DISTPATH"] = str(output_dir)
     env["PYTHONPATH"] = os.pathsep.join(filter(None, [str(ROOT / "src"), env.get("PYTHONPATH", "")]))
-    subprocess.run(["pyinstaller", str(SPEC), "--clean", "--noconfirm"], check=True, cwd=ROOT, env=env)
+    subprocess.run([sys.executable, "-m", "PyInstaller", str(SPEC), "--clean", "--noconfirm"], check=True, cwd=ROOT, env=env)
 
 
 def build_windows(output_dir: Path) -> None:

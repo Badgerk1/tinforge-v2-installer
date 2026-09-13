@@ -6,7 +6,10 @@ import build_installer
 
 
 def test_ensure_prerequisites_requires_pyinstaller(monkeypatch):
-    monkeypatch.setattr(build_installer, "which", lambda _name: None)
+    def fail_run(*_args, **_kwargs):
+        raise build_installer.subprocess.CalledProcessError(returncode=1, cmd="PyInstaller --version")
+
+    monkeypatch.setattr(build_installer.subprocess, "run", fail_run)
     with pytest.raises(RuntimeError, match="PyInstaller is not installed"):
         build_installer.ensure_prerequisites()
 
