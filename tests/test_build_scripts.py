@@ -49,3 +49,33 @@ def test_build_release_notes_contains_sections(release_module, tmp_path):
     assert "TinForge v2 v1.2.3" in notes
     assert "SHA256 Checksums" in notes
     assert "TinForge-v2.AppImage" in notes
+
+
+def test_build_release_notes_includes_recent_commits(release_module, tmp_path, monkeypatch):
+    artifacts = [
+        tmp_path / "TinForge-v2-Setup.exe",
+        tmp_path / "TinForge-v2.dmg",
+        tmp_path / "TinForge-v2.AppImage",
+    ]
+    for artifact in artifacts:
+        artifact.write_text("x", encoding="utf-8")
+
+    monkeypatch.setattr(release_module, "collect_commit_summaries", lambda *_args, **_kwargs: ["abc123 Add CI"])
+    notes = release_module.build_release_notes("v1.2.3", artifacts, {artifact.name: "abc123" for artifact in artifacts})
+    assert "## Recent Commits" in notes
+    assert "- abc123 Add CI" in notes
+
+
+def test_build_release_notes_handles_missing_commit_history(release_module, tmp_path, monkeypatch):
+    artifacts = [
+        tmp_path / "TinForge-v2-Setup.exe",
+        tmp_path / "TinForge-v2.dmg",
+        tmp_path / "TinForge-v2.AppImage",
+    ]
+    for artifact in artifacts:
+        artifact.write_text("x", encoding="utf-8")
+
+    monkeypatch.setattr(release_module, "collect_commit_summaries", lambda *_args, **_kwargs: [])
+    notes = release_module.build_release_notes("v1.2.3", artifacts, {artifact.name: "abc123" for artifact in artifacts})
+    assert "## Recent Commits" in notes
+    assert "Commit history unavailable in this environment." in notes

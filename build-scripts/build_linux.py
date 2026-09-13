@@ -25,13 +25,10 @@ def main() -> int:
 
     expected_name = EXPECTED_ARTIFACTS["linux"]
     source = DIST_DIR / expected_name
-    binary_fallback = DIST_DIR / "tinforge-v2" / "tinforge-v2"
     destination = ARTIFACTS_DIR / expected_name
 
     if source.is_file():
         shutil.copy2(source, destination)
-    elif binary_fallback.is_file():
-        shutil.copy2(binary_fallback, destination)
     elif args.smoke_test:
         write_placeholder(destination, "linux-smoke-artifact")
     else:
