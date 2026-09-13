@@ -130,3 +130,23 @@ def test_linux_build_smoke_creates_placeholder(monkeypatch, tmp_path):
     monkeypatch.setattr(module, "parse_args", lambda: SimpleNamespace(skip_build=True, smoke_test=True))
     assert module.main() == 0
     assert (tmp_path / ".artifacts" / "TinForge-v2.AppImage").is_file()
+
+
+def test_platform_workflows_support_release_and_reusable_upload_paths():
+    workflows = {
+        "build-windows.yml": ("windows-installer", ".artifacts/TinForge-v2-Setup.exe"),
+        "build-macos.yml": ("macos-installer", ".artifacts/TinForge-v2.dmg"),
+        "build-linux.yml": ("linux-installer", ".artifacts/TinForge-v2.AppImage"),
+    }
+
+    for filename, (artifact_name, artifact_path) in workflows.items():
+        content = (REPO_ROOT / ".github" / "workflows" / filename).read_text(encoding="utf-8")
+        assert "workflow_call:" in content
+        assert "workflow_dispatch:" in content
+        assert "if: github.event_name != 'release'" in content
+        assert "uses: actions/upload-artifact@v4" in content
+        assert f"name: {artifact_name}" in content
+        assert f"path: {artifact_path}" in content
+        assert "if: github.event_name == 'release'" in content
+        assert "uses: softprops/action-gh-release@v1" in content
+        assert f"files: {artifact_path}" in content
