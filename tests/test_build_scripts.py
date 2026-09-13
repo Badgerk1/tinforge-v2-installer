@@ -20,6 +20,16 @@ def _load_script(module_name: str):
     return module
 
 
+def test_run_command_returns_false_on_failure(monkeypatch):
+    utils = _load_script("utils")
+
+    def _raise(*_args, **_kwargs):
+        raise utils.subprocess.CalledProcessError(returncode=1, cmd="bad")
+
+    monkeypatch.setattr(utils.subprocess, "run", _raise)
+    assert utils.run_command(["bad"]) is False
+
+
 def test_windows_build_returns_error_when_spec_missing(monkeypatch, tmp_path):
     module = _load_script("build_windows")
     monkeypatch.chdir(tmp_path)
@@ -27,10 +37,18 @@ def test_windows_build_returns_error_when_spec_missing(monkeypatch, tmp_path):
     assert module.main() == 1
 
 
+def test_windows_build_returns_error_when_dependencies_missing(monkeypatch, tmp_path):
+    module = _load_script("build_windows")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(module, "parse_args", lambda: SimpleNamespace(skip_build=False, smoke_test=False))
+    monkeypatch.setattr(module, "check_python_version", lambda: True)
+    monkeypatch.setattr(module, "run_command", lambda *_args, **_kwargs: False)
+    assert module.main() == 1
+
+
 def test_windows_build_smoke_creates_placeholder(monkeypatch, tmp_path):
     module = _load_script("build_windows")
     monkeypatch.chdir(tmp_path)
-    (tmp_path / ".artifacts").mkdir(parents=True)
 
     monkeypatch.setattr(module, "parse_args", lambda: SimpleNamespace(skip_build=True, smoke_test=True))
     assert module.main() == 0
@@ -40,7 +58,6 @@ def test_windows_build_smoke_creates_placeholder(monkeypatch, tmp_path):
 def test_macos_build_smoke_creates_placeholder(monkeypatch, tmp_path):
     module = _load_script("build_macos")
     monkeypatch.chdir(tmp_path)
-    (tmp_path / ".artifacts").mkdir(parents=True)
 
     monkeypatch.setattr(module, "parse_args", lambda: SimpleNamespace(skip_build=True, smoke_test=True))
     assert module.main() == 0
@@ -50,7 +67,6 @@ def test_macos_build_smoke_creates_placeholder(monkeypatch, tmp_path):
 def test_linux_build_smoke_creates_placeholder(monkeypatch, tmp_path):
     module = _load_script("build_linux")
     monkeypatch.chdir(tmp_path)
-    (tmp_path / ".artifacts").mkdir(parents=True)
 
     monkeypatch.setattr(module, "parse_args", lambda: SimpleNamespace(skip_build=True, smoke_test=True))
     assert module.main() == 0

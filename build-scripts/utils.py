@@ -8,7 +8,10 @@ import sys
 def run_command(cmd, cwd=None, check=True):
     """Run a command and handle errors"""
     print(f"Running: {' '.join(cmd)}")
-    result = subprocess.run(cmd, cwd=cwd, check=check)
+    try:
+        result = subprocess.run(cmd, cwd=cwd, check=check)
+    except subprocess.CalledProcessError:
+        return False
     return result.returncode == 0
 
 

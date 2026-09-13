@@ -9,7 +9,8 @@ setup(
     package_dir={"": "src"},
     python_requires=">=3.9",
     install_requires=[
-        "PyQt5>=5.15.0",
+        "PyQt5==5.15.9",
+        "PyQt5-sip==12.13.0",
     ],
     entry_points={
         "console_scripts": [

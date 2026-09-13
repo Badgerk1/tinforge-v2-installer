@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import shutil
 import sys
 
 from utils import check_file_exists, check_python_version, run_command
@@ -20,8 +21,9 @@ def parse_args():
 def main():
     args = parse_args()
 
+    os.makedirs(".artifacts", exist_ok=True)
+
     if args.smoke_test:
-        os.makedirs(".artifacts", exist_ok=True)
         with open(ARTIFACT_PATH, "w", encoding="utf-8") as artifact:
             artifact.write("windows-smoke-artifact")
         print(f"✓ Smoke artifact created: {ARTIFACT_PATH}")
@@ -68,9 +70,13 @@ def main():
     if not check_file_exists(exe_file, "Built executable"):
         return 1
 
+    shutil.copy2(exe_file, ARTIFACT_PATH)
+    if not check_file_exists(ARTIFACT_PATH, "Staged installer artifact"):
+        return 1
+
     print("\n" + "=" * 60)
     print("✓ Windows build succeeded!")
-    print(f"  Installer: {exe_file}")
+    print(f"  Installer: {ARTIFACT_PATH}")
     print("=" * 60)
     return 0
 
