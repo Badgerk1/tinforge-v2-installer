@@ -8,7 +8,7 @@ import sys
 from utils import check_file_exists, check_python_version, run_command
 
 
-ARTIFACT_PATH = ".artifacts/TinForge-v2-linux"
+ARTIFACT_PATH = ".artifacts/TinForge-v2.AppImage"
 
 
 def parse_args():
