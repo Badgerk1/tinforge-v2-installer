@@ -1,41 +1,54 @@
 name: Build Windows Installer
 
 on:
-  workflow_dispatch:
   workflow_call:
+  workflow_dispatch:
+  release:
+    types: [published]
 
 jobs:
   build:
     runs-on: windows-latest
     permissions:
-      contents: read
+      contents: write
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: '3.11'
 
-      - name: Setup build environment
-        shell: bash
-        run: bash .github/workflows/common/setup-build-env.sh windows
+      - name: Verify Python
+        run: python --version
 
-      - name: Verify build toolchain
-        shell: bash
+      - name: Install dependencies
         run: |
-          python --version
-          python -m pip --version
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Verify dependencies
+        run: |
+          pip list
+          python -c "import PyQt5; print('PyQt5 OK')"
           pyinstaller --version
 
       - name: Build installer
-        shell: bash
-        run: |
-          mkdir -p .artifacts/logs
-          python build-scripts/build_windows.py 2>&1 | tee .artifacts/logs/build-windows.log
+        run: python build-scripts/build_windows.py
 
       - name: Upload workflow artifact
+        if: github.event_name != 'release'
         uses: actions/upload-artifact@v4
         with:
           name: windows-installer
-          path: |
-            .artifacts/TinForge-v2-Setup.exe
-            .artifacts/logs/build-windows.log
+          path: .artifacts/TinForge-v2-Setup.exe
+
+      - name: Upload to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: .artifacts/TinForge-v2-Setup.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

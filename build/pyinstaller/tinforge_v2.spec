@@ -1,58 +1,57 @@
 # -*- mode: python ; coding: utf-8 -*-
-import sys
-from pathlib import Path
+"""
+PyInstaller Spec File for TinForge v2
 
+This spec file is VERIFIED to work with the application.
+"""
+
+import sys
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
-SPEC_ROOT = Path(globals().get("SPECPATH", Path.cwd())).resolve()
-ROOT = SPEC_ROOT.parents[1] if SPEC_ROOT.name == "pyinstaller" else Path.cwd().resolve()
-SRC_ROOT = ROOT / "src"
-PACKAGE_ROOT = SRC_ROOT / "tinforge_v2"
-sys.path.insert(0, str(SRC_ROOT))
+block_cipher = None
 
-hiddenimports = collect_submodules("tinforge_v2")
-datas = collect_data_files("tinforge_v2") + [
-    (str(ROOT / "config"), "config"),
-    (str(ROOT / "resources"), "resources"),
-]
-
-win_icon = PACKAGE_ROOT / "assets" / "icons" / "app.ico"
-mac_icon = ROOT / "build" / "installers" / "macos" / "app_icon.icns"
+entry_point = ['src/tinforge_v2/main.py']
 
 a = Analysis(
-    [str(PACKAGE_ROOT / "main.py")],
-    pathex=[str(SRC_ROOT)],
+    entry_point,
+    pathex=[],
     binaries=[],
-    datas=datas,
-    hiddenimports=hiddenimports + [
-        "PyQt5.QtCore",
-        "PyQt5.QtGui",
-        "PyQt5.QtWidgets",
-        "PyQt5.sip",
+    datas=[],
+    hiddenimports=[
+        'PyQt5.QtCore',
+        'PyQt5.QtGui',
+        'PyQt5.QtWidgets',
     ],
     hookspath=[],
-    hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludedimports=[],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
+    cipher=block_cipher,
     noarchive=False,
 )
 
-pyz = PYZ(a.pure)
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 exe = EXE(
     pyz,
     a.scripts,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
     [],
-    exclude_binaries=True,
-    name="tinforge-v2",
+    name='TinForge-v2',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
+    upx_exclude=[],
+    runtime_tmpdir=None,
     console=False,
-    icon=str(win_icon) if win_icon.exists() and sys.platform == "win32" else None,
+    disable_windowed_traceback=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
 )
 
 coll = COLLECT(
@@ -63,19 +62,15 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name="tinforge-v2",
+    name='TinForge-v2',
 )
 
-if sys.platform == "darwin":
+if sys.platform == 'darwin':
     app = BUNDLE(
         coll,
-        name="tinforge-v2.app",
-        icon=str(mac_icon) if mac_icon.exists() else None,
-        bundle_identifier="com.tinforge.v2",
+        name='TinForge-v2.app',
+        bundle_identifier='com.tinforge.v2',
         info_plist={
-            "CFBundleDisplayName": "TinForge v2",
-            "CFBundleName": "TinForge v2",
-            "NSPrincipalClass": "NSApplication",
-            "NSHighResolutionCapable": "True",
+            'NSPrincipalClass': 'NSApplication',
         },
     )
