@@ -36,7 +36,7 @@ class MainWindow(QMainWindow):
     def __init__(self, config: dict | None = None, config_manager: ConfigManager | None = None, project_manager: ProjectManager | None = None) -> None:
         super().__init__()
         self.config_manager = config_manager or ConfigManager()
-        self.config = config or self.config_manager.load()
+        self.config = config if config is not None else self.config_manager.load()
         self.project_manager = project_manager or ProjectManager(self.config_manager, self.config)
         self._recent_project_actions: list[QAction] = []
 
@@ -325,4 +325,5 @@ class MainWindow(QMainWindow):
             return self.project_manager.import_files(Path(sources[0]).stem, sources)
         existing = [str(path) for path in current.source_files]
         merged = existing + [path for path in sources if path not in existing]
-        return self.project_manager.import_files(current.name, merged)
+        current.source_files = [Path(path) for path in merged]
+        return current

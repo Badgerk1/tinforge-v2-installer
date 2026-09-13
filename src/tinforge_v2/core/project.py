@@ -57,7 +57,7 @@ class ProjectManager:
             raise RuntimeError("No project loaded")
 
         target = Path(path)
-        if not str(target).endswith(PROJECT_FILE_SUFFIX):
+        if not str(target).lower().endswith(PROJECT_FILE_SUFFIX.lower()):
             target = target.with_suffix("")
             target = target.parent / f"{target.name}{PROJECT_FILE_SUFFIX}"
         target.parent.mkdir(parents=True, exist_ok=True)

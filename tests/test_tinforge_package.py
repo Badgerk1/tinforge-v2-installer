@@ -55,13 +55,13 @@ def test_version_manager_handles_prerelease_and_non_numeric_segments():
     assert VersionManager.is_newer("1.0rc10", "1.0rc2") is True
 
 
-def test_package_assets_are_discoverable():
+def test_package_assets_are_discoverable(monkeypatch):
     styles_root = importlib.resources.files("src.tinforge_v2.gui.styles")
     assets_root = importlib.resources.files("src.tinforge_v2")
     assert (styles_root / "dark_theme.qss").is_file()
     assert (styles_root / "light_theme.qss").is_file()
     assert (assets_root / "assets" / "icons" / "app.png").is_file()
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1] / "src"))
     installed_styles_root = importlib.resources.files("tinforge_v2.gui.styles")
     installed_assets_root = importlib.resources.files("tinforge_v2")
     assert (installed_styles_root / "dark_theme.qss").is_file()
@@ -128,6 +128,48 @@ def test_drop_event_accepts_project_files(tmp_path: Path, monkeypatch):
     window.dropEvent(event)
 
     assert opened == [str(project_path)]
+    assert event.accepted is True
+    window.close()
+    app.quit()
+
+
+def test_drop_event_merges_supported_source_files(tmp_path: Path):
+    app = QApplication.instance() or QApplication([])
+    config = ConfigManager(settings_path=tmp_path / "settings.json")
+    source_a = tmp_path / "a.csv"
+    source_b = tmp_path / "b.csv"
+    source_a.write_text("a", encoding="utf-8")
+    source_b.write_text("b", encoding="utf-8")
+    window = MainWindow(config=config.load(), config_manager=config)
+    window.project_manager.import_files("Demo", [source_a])
+
+    class _Url:
+        def __init__(self, path: Path) -> None:
+            self._path = path
+
+        def toLocalFile(self) -> str:
+            return str(self._path)
+
+    class _Event:
+        def __init__(self, paths: list[Path]) -> None:
+            self._paths = paths
+            self.accepted = False
+
+        def mimeData(self):
+            return self
+
+        def urls(self):
+            return [_Url(path) for path in self._paths]
+
+        def acceptProposedAction(self) -> None:
+            self.accepted = True
+
+    event = _Event([source_a, source_b])
+    window.dropEvent(event)
+
+    assert window.project_manager.current_project is not None
+    assert window.project_manager.current_project.name == "Demo"
+    assert window.project_manager.current_project.source_files == [source_a, source_b]
     assert event.accepted is True
     window.close()
     app.quit()
