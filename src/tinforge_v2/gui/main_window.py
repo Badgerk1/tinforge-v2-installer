@@ -293,6 +293,8 @@ class MainWindow(QMainWindow):
         if project is None:
             return
         project.source_files = [item for item in project.source_files if str(item) != path]
+        if project.project_path is not None:
+            self.project_manager.save_project(project.project_path)
         self.statusBar().showMessage(f"Removed {Path(path).name}")
         self._update_project_views()
 

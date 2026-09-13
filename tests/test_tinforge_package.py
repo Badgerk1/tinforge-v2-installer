@@ -2,6 +2,7 @@ from pathlib import Path
 
 from src.tinforge_v2.core.config import ConfigManager
 from src.tinforge_v2.core.project import ProjectManager
+from src.tinforge_v2.core.version import VersionManager
 from src.tinforge_v2.gui.styles import DARK_THEME, LIGHT_THEME, load_theme
 
 
@@ -36,3 +37,10 @@ def test_stylesheets_cover_both_themes():
     assert "QMainWindow" in LIGHT_THEME
     assert load_theme("light") == LIGHT_THEME
     assert load_theme("anything-else") == DARK_THEME
+
+
+def test_version_manager_handles_prerelease_and_non_numeric_segments():
+    assert VersionManager.is_newer("1.0.1", "1.0.0") is True
+    assert VersionManager.is_newer("1.0.0-rc2", "1.0.0-rc1") is True
+    assert VersionManager.is_newer("1.0.0", "1.0.0-rc1") is True
+    assert VersionManager.is_newer("1.0rc1", "1.0.0") is False

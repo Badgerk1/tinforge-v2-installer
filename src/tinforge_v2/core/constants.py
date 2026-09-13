@@ -34,7 +34,18 @@ def _default_user_config_dir() -> Path:
     return base / APP_SLUG
 
 
+def _default_user_data_dir() -> Path:
+    if os.name == "nt":
+        base = Path(os.getenv("LOCALAPPDATA", str(Path.home() / "AppData" / "Local")))
+    elif platform.system() == "Darwin":
+        base = Path.home() / "Library" / "Application Support"
+    else:
+        base = Path(os.getenv("XDG_DATA_HOME", str(Path.home() / ".local" / "share")))
+    return base / APP_SLUG
+
+
 CONFIG_DIR = _default_user_config_dir()
+DATA_DIR = _default_user_data_dir()
 DEFAULT_SETTINGS_PATH = CONFIG_DIR / "settings.json"
-DEFAULT_EXPORT_DIR = Path.home() / "Documents" / APP_NAME / "Exports"
-DEFAULT_PROJECT_DIR = Path.home() / "Documents" / APP_NAME / "Projects"
+DEFAULT_EXPORT_DIR = DATA_DIR / "Exports"
+DEFAULT_PROJECT_DIR = DATA_DIR / "Projects"

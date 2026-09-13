@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from .constants import (
+    CONFIG_DIR,
     DEFAULT_EXPORT_DIR,
     DEFAULT_EXPORT_FORMATS,
     DEFAULT_PROJECT_DIR,
@@ -33,6 +34,9 @@ class ConfigManager:
 
     def __init__(self, settings_path: Path | None = None) -> None:
         self.settings_path = settings_path or DEFAULT_SETTINGS_PATH
+        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        DEFAULT_PROJECT_DIR.mkdir(parents=True, exist_ok=True)
+        DEFAULT_EXPORT_DIR.mkdir(parents=True, exist_ok=True)
         self.settings_path.parent.mkdir(parents=True, exist_ok=True)
 
     def default_settings(self) -> dict[str, Any]:
