@@ -1,0 +1,46 @@
+name: Quality Assurance
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-build.txt
+          python -m pip install -r requirements.txt
+
+      - name: Unit tests
+        run: python -m pytest tests/test_app_manager.py tests/test_updater.py tests/test_build_scripts.py
+
+      - name: Integration tests
+        run: python -m pytest tests/test_integration.py tests/test_gui.py
+
+      - name: Build verification
+        run: |
+          python -m compileall build-scripts build_installer.py
+          python build_installer.py --help
+
+      - name: Installer smoke tests
+        run: |
+          python build-scripts/build_windows.py --skip-build --smoke-test
+          python build-scripts/build_macos.py --skip-build --smoke-test
+          python build-scripts/build_linux.py --skip-build --smoke-test
+          python build-scripts/create_release.py --version smoke-test
+          test -f .artifacts/TinForge-v2-Setup.exe
+          test -f .artifacts/TinForge-v2.dmg
+          test -f .artifacts/TinForge-v2.AppImage

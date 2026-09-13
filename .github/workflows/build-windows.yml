@@ -1,0 +1,34 @@
+name: Build Windows Installer
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Setup build environment
+        shell: bash
+        run: bash .github/workflows/common/setup-build-env.sh windows
+
+      - name: Build installer
+        shell: bash
+        run: |
+          mkdir -p .artifacts/logs
+          python build-scripts/build_windows.py 2>&1 | tee .artifacts/logs/build-windows.log
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: |
+            .artifacts/TinForge-v2-Setup.exe
+            .artifacts/logs/build-windows.log
