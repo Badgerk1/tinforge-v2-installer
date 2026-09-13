@@ -240,7 +240,7 @@ class MainWindow(QMainWindow):
         self._update_project_views()
 
     def import_files(self) -> None:
-        default_dir = self.config.get("default_project_dir", "")
+        default_dir = self.file_browser.location.text().strip() or self.config.get("default_project_dir", "")
         files, _ = QFileDialog.getOpenFileNames(self, "Select source files", default_dir, "Data Files (*.csv *.pdf *.txt *.xml *.dxf *.dbx *.tp3)")
         if not files:
             return

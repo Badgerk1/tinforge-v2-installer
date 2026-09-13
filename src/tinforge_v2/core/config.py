@@ -34,10 +34,11 @@ class ConfigManager:
 
     def __init__(self, settings_path: Path | None = None) -> None:
         self.settings_path = settings_path or DEFAULT_SETTINGS_PATH
-        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-        DEFAULT_PROJECT_DIR.mkdir(parents=True, exist_ok=True)
-        DEFAULT_EXPORT_DIR.mkdir(parents=True, exist_ok=True)
         self.settings_path.parent.mkdir(parents=True, exist_ok=True)
+        if self.settings_path == DEFAULT_SETTINGS_PATH:
+            CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+            DEFAULT_PROJECT_DIR.mkdir(parents=True, exist_ok=True)
+            DEFAULT_EXPORT_DIR.mkdir(parents=True, exist_ok=True)
 
     def default_settings(self) -> dict[str, Any]:
         defaults = DefaultSettings()

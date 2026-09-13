@@ -1,4 +1,5 @@
 from pathlib import Path
+import importlib.resources
 
 from src.tinforge_v2.core.config import ConfigManager
 from src.tinforge_v2.core.project import ProjectManager
@@ -44,3 +45,12 @@ def test_version_manager_handles_prerelease_and_non_numeric_segments():
     assert VersionManager.is_newer("1.0.0-rc2", "1.0.0-rc1") is True
     assert VersionManager.is_newer("1.0.0", "1.0.0-rc1") is True
     assert VersionManager.is_newer("1.0rc1", "1.0.0") is False
+    assert VersionManager.is_newer("1.0rc2", "1.0rc1") is True
+
+
+def test_package_assets_are_discoverable():
+    styles_root = importlib.resources.files("src.tinforge_v2.gui.styles")
+    assets_root = importlib.resources.files("src.tinforge_v2")
+    assert (styles_root / "dark_theme.qss").is_file()
+    assert (styles_root / "light_theme.qss").is_file()
+    assert (assets_root / "assets" / "icons" / "app.png").is_file()

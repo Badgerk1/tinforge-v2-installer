@@ -6,4 +6,8 @@ setup(
     package_dir={"": "src"},
     packages=find_packages(where="src"),
     include_package_data=True,
+    package_data={
+        "tinforge_v2": ["assets/*.qrc", "assets/icons/*.ico", "assets/icons/*.png"],
+        "tinforge_v2.gui.styles": ["*.qss"],
+    },
 )

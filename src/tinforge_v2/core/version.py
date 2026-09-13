@@ -42,8 +42,14 @@ class VersionManager:
         def _parse(value: str) -> tuple[tuple[int, ...], tuple[str, ...]]:
             normalized = value.lstrip("v").split("+")[0]
             core, _, prerelease = normalized.partition("-")
-            core_parts = tuple(_numeric_prefix(part) for part in core.split("."))
+            core_segments = core.split(".")
             prerelease_parts = tuple(segment for segment in prerelease.split(".") if segment) if prerelease else ()
+            if core_segments:
+                tail_match = re.match(r"(?P<number>\d+)(?P<suffix>[A-Za-z].*)$", core_segments[-1])
+                if tail_match:
+                    core_segments[-1] = tail_match.group("number")
+                    prerelease_parts = tuple(filter(None, re.split(r"[.-]", tail_match.group("suffix")))) + prerelease_parts
+            core_parts = tuple(_numeric_prefix(part) for part in core_segments)
             return core_parts, prerelease_parts
 
         def _compare_prerelease(left: tuple[str, ...], right: tuple[str, ...]) -> int:
