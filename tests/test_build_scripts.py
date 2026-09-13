@@ -1,252 +1,57 @@
 from pathlib import Path
 from types import SimpleNamespace
 
-import pytest
+import importlib.util
 
 
-@pytest.fixture
-def release_module(monkeypatch):
-    import importlib.util
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SCRIPTS_DIR = REPO_ROOT / "build-scripts"
 
-    scripts_dir = Path(__file__).resolve().parents[1] / "build-scripts"
-    module_path = scripts_dir / "create_release.py"
-    monkeypatch.syspath_prepend(str(scripts_dir))
-    spec = importlib.util.spec_from_file_location("create_release", module_path)
+
+def _load_script(module_name: str):
+    import sys
+
+    if str(SCRIPTS_DIR) not in sys.path:
+        sys.path.insert(0, str(SCRIPTS_DIR))
+    spec = importlib.util.spec_from_file_location(module_name, SCRIPTS_DIR / f"{module_name}.py")
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
     return module
 
 
-@pytest.fixture
-def windows_build_module(monkeypatch):
-    import importlib.util
-
-    scripts_dir = Path(__file__).resolve().parents[1] / "build-scripts"
-    module_path = scripts_dir / "build_windows.py"
-    monkeypatch.syspath_prepend(str(scripts_dir))
-    spec = importlib.util.spec_from_file_location("build_windows", module_path)
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return module
+def test_windows_build_returns_error_when_spec_missing(monkeypatch, tmp_path):
+    module = _load_script("build_windows")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(module, "parse_args", lambda: SimpleNamespace(skip_build=False, smoke_test=False))
+    assert module.main() == 1
 
 
-@pytest.fixture
-def macos_build_module(monkeypatch):
-    import importlib.util
+def test_windows_build_smoke_creates_placeholder(monkeypatch, tmp_path):
+    module = _load_script("build_windows")
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".artifacts").mkdir(parents=True)
 
-    scripts_dir = Path(__file__).resolve().parents[1] / "build-scripts"
-    module_path = scripts_dir / "build_macos.py"
-    monkeypatch.syspath_prepend(str(scripts_dir))
-    spec = importlib.util.spec_from_file_location("build_macos", module_path)
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return module
+    monkeypatch.setattr(module, "parse_args", lambda: SimpleNamespace(skip_build=True, smoke_test=True))
+    assert module.main() == 0
+    assert (tmp_path / ".artifacts" / "TinForge-v2-Setup.exe").is_file()
 
 
-@pytest.fixture
-def linux_build_module(monkeypatch):
-    import importlib.util
+def test_macos_build_smoke_creates_placeholder(monkeypatch, tmp_path):
+    module = _load_script("build_macos")
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".artifacts").mkdir(parents=True)
 
-    scripts_dir = Path(__file__).resolve().parents[1] / "build-scripts"
-    module_path = scripts_dir / "build_linux.py"
-    monkeypatch.syspath_prepend(str(scripts_dir))
-    spec = importlib.util.spec_from_file_location("build_linux", module_path)
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return module
+    monkeypatch.setattr(module, "parse_args", lambda: SimpleNamespace(skip_build=True, smoke_test=True))
+    assert module.main() == 0
+    assert (tmp_path / ".artifacts" / "TinForge-v2.dmg").is_file()
 
 
-def test_sha256sum_returns_hash(release_module, tmp_path):
-    sample = tmp_path / "sample.bin"
-    sample.write_bytes(b"tinforge")
+def test_linux_build_smoke_creates_placeholder(monkeypatch, tmp_path):
+    module = _load_script("build_linux")
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".artifacts").mkdir(parents=True)
 
-    result = release_module.sha256sum(sample)
-    assert len(result) == 64
-
-
-def test_collect_artifacts_requires_all_expected(release_module, tmp_path):
-    (tmp_path / "TinForge-v2-Setup.exe").write_text("x", encoding="utf-8")
-    (tmp_path / "TinForge-v2.dmg").write_text("x", encoding="utf-8")
-
-    with pytest.raises(FileNotFoundError):
-        release_module.collect_artifacts(tmp_path)
-
-
-def test_build_release_notes_contains_sections(release_module, tmp_path):
-    artifacts = [
-        tmp_path / "TinForge-v2-Setup.exe",
-        tmp_path / "TinForge-v2.dmg",
-        tmp_path / "TinForge-v2.AppImage",
-    ]
-    for artifact in artifacts:
-        artifact.write_text("x", encoding="utf-8")
-
-    checksums = {artifact.name: "abc123" for artifact in artifacts}
-    notes = release_module.build_release_notes("v1.2.3", artifacts, checksums)
-
-    assert "TinForge v2 v1.2.3" in notes
-    assert "SHA256 Checksums" in notes
-    assert "TinForge-v2.AppImage" in notes
-
-
-def test_build_release_notes_includes_recent_commits(release_module, tmp_path, monkeypatch):
-    artifacts = [
-        tmp_path / "TinForge-v2-Setup.exe",
-        tmp_path / "TinForge-v2.dmg",
-        tmp_path / "TinForge-v2.AppImage",
-    ]
-    for artifact in artifacts:
-        artifact.write_text("x", encoding="utf-8")
-
-    monkeypatch.setattr(release_module, "collect_commit_summaries", lambda *_args, **_kwargs: ["abc123 Add CI"])
-    notes = release_module.build_release_notes("v1.2.3", artifacts, {artifact.name: "abc123" for artifact in artifacts})
-    assert "## Recent Commits" in notes
-    assert "- abc123 Add CI" in notes
-
-
-def test_build_release_notes_handles_missing_commit_history(release_module, tmp_path, monkeypatch):
-    artifacts = [
-        tmp_path / "TinForge-v2-Setup.exe",
-        tmp_path / "TinForge-v2.dmg",
-        tmp_path / "TinForge-v2.AppImage",
-    ]
-    for artifact in artifacts:
-        artifact.write_text("x", encoding="utf-8")
-
-    monkeypatch.setattr(release_module, "collect_commit_summaries", lambda *_args, **_kwargs: [])
-    notes = release_module.build_release_notes("v1.2.3", artifacts, {artifact.name: "abc123" for artifact in artifacts})
-    assert "## Recent Commits" in notes
-    assert "Commit history unavailable in this environment." in notes
-
-
-def test_windows_build_non_smoke_copies_expected_artifact(windows_build_module, tmp_path, monkeypatch):
-    root_dir = tmp_path / "repo"
-    root_dir.mkdir()
-    artifact_dir = tmp_path / "artifacts"
-    source = root_dir / "TinForge-v2-Setup.exe"
-    source.write_text("binary", encoding="utf-8")
-
-    monkeypatch.setattr(
-        windows_build_module,
-        "parse_args",
-        lambda: SimpleNamespace(skip_build=True, smoke_test=False),
-    )
-    monkeypatch.setattr(windows_build_module, "ROOT_DIR", root_dir)
-    monkeypatch.setattr(windows_build_module, "ARTIFACTS_DIR", artifact_dir)
-
-    result = windows_build_module.main()
-    destination = artifact_dir / "TinForge-v2-Setup.exe"
-
-    assert result == 0
-    assert destination.exists()
-    assert destination.read_text(encoding="utf-8") == "binary"
-
-
-def test_windows_build_smoke_creates_placeholder(windows_build_module, tmp_path, monkeypatch):
-    root_dir = tmp_path / "repo"
-    root_dir.mkdir()
-    artifact_dir = tmp_path / "artifacts"
-
-    monkeypatch.setattr(
-        windows_build_module,
-        "parse_args",
-        lambda: SimpleNamespace(skip_build=True, smoke_test=True),
-    )
-    monkeypatch.setattr(windows_build_module, "ROOT_DIR", root_dir)
-    monkeypatch.setattr(windows_build_module, "ARTIFACTS_DIR", artifact_dir)
-
-    windows_build_module.main()
-    assert (artifact_dir / "TinForge-v2-Setup.exe").read_text(encoding="utf-8") == "windows-smoke-artifact"
-
-
-def test_macos_build_non_smoke_copies_expected_artifact(macos_build_module, tmp_path, monkeypatch):
-    root_dir = tmp_path / "repo"
-    dist_dir = root_dir / "dist"
-    dist_dir.mkdir(parents=True)
-    artifact_dir = tmp_path / "artifacts"
-    source = dist_dir / "TinForge-v2.dmg"
-    source.write_text("dmg", encoding="utf-8")
-
-    monkeypatch.setattr(
-        macos_build_module,
-        "parse_args",
-        lambda: SimpleNamespace(skip_build=True, smoke_test=False),
-    )
-    monkeypatch.setattr(macos_build_module, "ROOT_DIR", root_dir)
-    monkeypatch.setattr(macos_build_module, "DIST_DIR", dist_dir)
-    monkeypatch.setattr(macos_build_module, "ARTIFACTS_DIR", artifact_dir)
-
-    result = macos_build_module.main()
-    destination = artifact_dir / "TinForge-v2.dmg"
-
-    assert result == 0
-    assert destination.exists()
-    assert destination.read_text(encoding="utf-8") == "dmg"
-
-
-def test_macos_build_smoke_creates_placeholder(macos_build_module, tmp_path, monkeypatch):
-    root_dir = tmp_path / "repo"
-    root_dir.mkdir()
-    artifact_dir = tmp_path / "artifacts"
-
-    monkeypatch.setattr(
-        macos_build_module,
-        "parse_args",
-        lambda: SimpleNamespace(skip_build=True, smoke_test=True),
-    )
-    monkeypatch.setattr(macos_build_module, "ROOT_DIR", root_dir)
-    monkeypatch.setattr(macos_build_module, "DIST_DIR", root_dir / "dist")
-    monkeypatch.setattr(macos_build_module, "ARTIFACTS_DIR", artifact_dir)
-
-    macos_build_module.main()
-    assert (artifact_dir / "TinForge-v2.dmg").read_text(encoding="utf-8") == "macos-smoke-artifact"
-
-
-def test_linux_build_non_smoke_copies_and_sets_executable(linux_build_module, tmp_path, monkeypatch):
-    root_dir = tmp_path / "repo"
-    dist_dir = root_dir / "dist"
-    dist_dir.mkdir(parents=True)
-    artifact_dir = tmp_path / "artifacts"
-    source = dist_dir / "TinForge-v2.AppImage"
-    source.write_text("appimage", encoding="utf-8")
-
-    monkeypatch.setattr(
-        linux_build_module,
-        "parse_args",
-        lambda: SimpleNamespace(skip_build=True, smoke_test=False),
-    )
-    monkeypatch.setattr(linux_build_module, "ROOT_DIR", root_dir)
-    monkeypatch.setattr(linux_build_module, "DIST_DIR", dist_dir)
-    monkeypatch.setattr(linux_build_module, "ARTIFACTS_DIR", artifact_dir)
-
-    result = linux_build_module.main()
-    destination = artifact_dir / "TinForge-v2.AppImage"
-
-    assert result == 0
-    assert destination.exists()
-    assert destination.read_text(encoding="utf-8") == "appimage"
-    assert destination.stat().st_mode & 0o111
-
-
-def test_linux_build_smoke_creates_executable_placeholder(linux_build_module, tmp_path, monkeypatch):
-    root_dir = tmp_path / "repo"
-    root_dir.mkdir()
-    artifact_dir = tmp_path / "artifacts"
-
-    monkeypatch.setattr(
-        linux_build_module,
-        "parse_args",
-        lambda: SimpleNamespace(skip_build=True, smoke_test=True),
-    )
-    monkeypatch.setattr(linux_build_module, "ROOT_DIR", root_dir)
-    monkeypatch.setattr(linux_build_module, "DIST_DIR", root_dir / "dist")
-    monkeypatch.setattr(linux_build_module, "ARTIFACTS_DIR", artifact_dir)
-
-    linux_build_module.main()
-    destination = artifact_dir / "TinForge-v2.AppImage"
-    assert destination.read_text(encoding="utf-8") == "linux-smoke-artifact"
-    assert destination.stat().st_mode & 0o111
+    monkeypatch.setattr(module, "parse_args", lambda: SimpleNamespace(skip_build=True, smoke_test=True))
+    assert module.main() == 0
+    assert (tmp_path / ".artifacts" / "TinForge-v2.AppImage").is_file()

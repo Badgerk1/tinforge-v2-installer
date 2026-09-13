@@ -1,31 +1,30 @@
-"""Shared helpers for CI build scripts."""
+"""Build utilities"""
 
-from __future__ import annotations
-
+import os
 import subprocess
-from pathlib import Path
+import sys
 
 
-def run(command: list[str], cwd: Path | None = None) -> None:
-    subprocess.run(command, cwd=cwd, check=True)
+def run_command(cmd, cwd=None, check=True):
+    """Run a command and handle errors"""
+    print(f"Running: {' '.join(cmd)}")
+    result = subprocess.run(cmd, cwd=cwd, check=check)
+    return result.returncode == 0
 
 
-def ensure_file(path: Path, label: str) -> Path:
-    if not path.is_file():
-        raise FileNotFoundError(f"Expected {label} at: {path}")
-    return path
+def check_file_exists(path, description):
+    """Check if a file exists"""
+    if not os.path.exists(path):
+        print(f"ERROR: {description} not found at {path}")
+        return False
+    print(f"✓ {description} found")
+    return True
 
 
-def ensure_executable(path: Path) -> Path:
-    path.chmod(path.stat().st_mode | 0o111)
-    return path
-
-
-def prepare_directory(path: Path) -> Path:
-    path.mkdir(parents=True, exist_ok=True)
-    return path
-
-
-def write_placeholder(path: Path, text: str) -> Path:
-    path.write_text(text, encoding="utf-8")
-    return path
+def check_python_version():
+    """Check Python version"""
+    if sys.version_info < (3, 9):
+        print(f"ERROR: Python 3.9+ required, got {sys.version}")
+        return False
+    print(f"✓ Python version OK: {sys.version}")
+    return True

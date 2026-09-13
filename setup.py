@@ -1,13 +1,19 @@
 from setuptools import find_packages, setup
 
 setup(
-    name="tinforge-v2-installer",
-    version="0.1.0",
-    package_dir={"": "src"},
+    name="tinforge-v2",
+    version="2.1.0",
+    description="TinForge v2 - Professional TIN generator",
+    author="Badgerk1",
     packages=find_packages(where="src"),
-    include_package_data=True,
-    package_data={
-        "tinforge_v2": ["assets/*.qrc", "assets/icons/*.ico", "assets/icons/*.png"],
-        "tinforge_v2.gui.styles": ["*.qss"],
+    package_dir={"": "src"},
+    python_requires=">=3.9",
+    install_requires=[
+        "PyQt5>=5.15.0",
+    ],
+    entry_points={
+        "console_scripts": [
+            "tinforge-v2=tinforge_v2.main:main",
+        ],
     },
 )

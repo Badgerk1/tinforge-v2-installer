@@ -1,43 +1,79 @@
-"""macOS installer build orchestrator."""
-
-from __future__ import annotations
+"""Build macOS installer"""
 
 import argparse
-import shutil
+import os
+import sys
 
-from config import ARTIFACTS_DIR, DIST_DIR, EXPECTED_ARTIFACTS, ROOT_DIR
-from utils import ensure_file, prepare_directory, run, write_placeholder
+from utils import check_file_exists, check_python_version, run_command
 
 
-def parse_args() -> argparse.Namespace:
+ARTIFACT_PATH = ".artifacts/TinForge-v2.dmg"
+
+
+def parse_args():
     parser = argparse.ArgumentParser(description="Build macOS installer")
-    parser.add_argument("--skip-build", action="store_true", help="Skip running build_installer.py")
-    parser.add_argument("--smoke-test", action="store_true", help="Allow placeholder artifact generation")
+    parser.add_argument("--skip-build", action="store_true")
+    parser.add_argument("--smoke-test", action="store_true")
     return parser.parse_args()
 
 
-def main() -> int:
+def main():
     args = parse_args()
-    prepare_directory(ARTIFACTS_DIR)
+
+    if args.smoke_test:
+        os.makedirs(".artifacts", exist_ok=True)
+        with open(ARTIFACT_PATH, "w", encoding="utf-8") as artifact:
+            artifact.write("macos-smoke-artifact")
+        print(f"✓ Smoke artifact created: {ARTIFACT_PATH}")
+        return 0
+
+    print("=" * 60)
+    print("Building TinForge v2 - macOS Installer")
+    print("=" * 60)
+
+    if not check_python_version():
+        return 1
+
+    if not run_command([sys.executable, "-c", "import PyQt5"]):
+        print("ERROR: PyQt5 is not installed")
+        return 1
+
+    if not run_command([sys.executable, "-m", "PyInstaller", "--version"]):
+        print("ERROR: PyInstaller is not installed")
+        return 1
+
+    spec_file = "build/pyinstaller/tinforge_v2.spec"
+    if not check_file_exists(spec_file, "PyInstaller spec file"):
+        return 1
+
+    if not check_file_exists("src/tinforge_v2/main.py", "Application entry point"):
+        return 1
 
     if not args.skip_build:
-        run(["python", "build_installer.py", "--platform", "macos"], cwd=ROOT_DIR)
+        print("\nRunning PyInstaller...")
+        if not run_command(
+            [
+                sys.executable,
+                "-m",
+                "PyInstaller",
+                spec_file,
+                "--clean",
+                "--onefile",
+            ]
+        ):
+            print("ERROR: PyInstaller failed")
+            return 1
 
-    expected_name = EXPECTED_ARTIFACTS["macos"]
-    source = DIST_DIR / expected_name
-    destination = ARTIFACTS_DIR / expected_name
+    app_file = "dist/TinForge-v2"
+    if not check_file_exists(app_file, "Built executable"):
+        return 1
 
-    if source.is_file():
-        shutil.copy2(source, destination)
-    elif args.smoke_test:
-        write_placeholder(destination, "macos-smoke-artifact")
-    else:
-        ensure_file(source, "macOS installer")
-
-    ensure_file(destination, "macOS artifact")
-    print(f"Created {destination}")
+    print("\n" + "=" * 60)
+    print("✓ macOS build succeeded!")
+    print(f"  Installer: {app_file}")
+    print("=" * 60)
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    sys.exit(main())
