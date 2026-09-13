@@ -5,11 +5,11 @@ from __future__ import annotations
 import argparse
 import platform
 import subprocess
-import sys
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent
+SPEC = ROOT / "build" / "pyinstaller" / "tinforge_v2.spec"
 
 
 def parse_args() -> argparse.Namespace:
@@ -20,34 +20,57 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def pick_builder(target: str) -> Path:
-    if target == "auto":
-        system = platform.system().lower()
-        target = "macos" if system == "darwin" else system
-    mapping = {
-        "windows": ROOT / "build" / "pyinstaller" / "build_windows.py",
-        "macos": ROOT / "build" / "pyinstaller" / "build_macos.py",
-        "linux": ROOT / "build" / "pyinstaller" / "build_linux.py",
-    }
-    if target not in mapping:
-        msg = f"Unsupported platform: {target}"
-        raise ValueError(msg)
-    builder = mapping[target]
-    if not builder.exists():
-        msg = f"Builder script not found: {builder}"
-        raise FileNotFoundError(msg)
-    return builder
+def resolve_platform(target: str) -> str:
+    if target != "auto":
+        return target
+
+    system = platform.system().lower()
+    if system == "darwin":
+        return "macos"
+    if system in {"windows", "linux"}:
+        return system
+
+    msg = f"Unsupported host platform: {system}"
+    raise ValueError(msg)
+
+
+def run_pyinstaller() -> None:
+    subprocess.run(["pyinstaller", str(SPEC), "--clean"], check=True)
+
+
+def build_windows() -> None:
+    run_pyinstaller()
+    nsis = ROOT / "build" / "installers" / "windows" / "tinforge.nsi"
+    if nsis.exists():
+        subprocess.run(["makensis", str(nsis)], check=False)
+
+
+def build_macos() -> None:
+    run_pyinstaller()
+    dmg_script = ROOT / "build" / "installers" / "macos" / "build_dmg.sh"
+    if dmg_script.exists():
+        subprocess.run(["bash", str(dmg_script)], check=True)
+
+
+def build_linux() -> None:
+    run_pyinstaller()
+    appimage_script = ROOT / "build" / "installers" / "linux" / "build_appimage.sh"
+    if appimage_script.exists():
+        subprocess.run(["bash", str(appimage_script)], check=True)
 
 
 def main() -> int:
     args = parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
-    builder = pick_builder(args.platform)
-    subprocess.run(
-        [sys.executable, str(builder), "--version", args.version, "--output", str(args.output)],
-        check=True,
-    )
-    print(f"Build complete for {args.platform} {args.version}")
+
+    selected = resolve_platform(args.platform)
+    builders = {
+        "windows": build_windows,
+        "macos": build_macos,
+        "linux": build_linux,
+    }
+    builders[selected]()
+    print(f"Build complete for {selected} {args.version}")
     return 0
 
 

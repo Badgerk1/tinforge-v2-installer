@@ -104,10 +104,15 @@ class MainWindow(QMainWindow):
             return
 
         self.progress.setValue(30)
-        files = self.manager.export(Path(output), wizard.selected_formats())
-        self.progress.setValue(100)
-        QMessageBox.information(self, "Export complete", f"Generated {len(files)} files in {output}")
-        self.progress.setValue(0)
+        try:
+            files = self.manager.export(Path(output), wizard.selected_formats())
+        except RuntimeError as exc:
+            QMessageBox.warning(self, "Export failed", str(exc))
+        else:
+            self.progress.setValue(100)
+            QMessageBox.information(self, "Export complete", f"Generated {len(files)} files in {output}")
+        finally:
+            self.progress.setValue(0)
 
     def open_settings(self) -> None:
         dialog = SettingsDialog(self.manager.settings, self)

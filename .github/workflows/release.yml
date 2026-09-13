@@ -6,9 +6,18 @@ on:
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     permissions:
       contents: write
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            target: windows
+          - os: macos-latest
+            target: macos
+          - os: ubuntu-latest
+            target: linux
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -16,4 +25,4 @@ jobs:
           python-version: '3.11'
       - run: pip install -r requirements-build.txt
       - run: pip install -r requirements.txt
-      - run: python build_installer.py --platform linux
+      - run: python build_installer.py --platform ${{ matrix.target }}

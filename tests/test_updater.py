@@ -13,6 +13,7 @@ def test_update_installer_rejects_unknown_extension(tmp_path):
     file.write_text("x", encoding="utf-8")
     result = UpdateInstaller().install(file)
     assert result.success is False
+    assert result.message == "Unsupported package format"
 
 
 def test_update_installer_accepts_supported_package(tmp_path):
@@ -20,6 +21,7 @@ def test_update_installer_accepts_supported_package(tmp_path):
     file.write_text("x", encoding="utf-8")
     result = UpdateInstaller().install(file)
     assert result.success is True
+    assert "update.exe" in result.message
 
 
 def test_update_installer_accepts_dmg_and_appimage(tmp_path):
@@ -28,10 +30,15 @@ def test_update_installer_accepts_dmg_and_appimage(tmp_path):
     appimage = tmp_path / "update.appimage"
     appimage.write_text("x", encoding="utf-8")
 
-    assert UpdateInstaller().install(dmg).success is True
-    assert UpdateInstaller().install(appimage).success is True
+    dmg_result = UpdateInstaller().install(dmg)
+    appimage_result = UpdateInstaller().install(appimage)
+    assert dmg_result.success is True
+    assert appimage_result.success is True
+    assert "update.dmg" in dmg_result.message
+    assert "update.appimage" in appimage_result.message
 
 
 def test_update_installer_rejects_missing_package(tmp_path):
     result = UpdateInstaller().install(tmp_path / "missing.exe")
     assert result.success is False
+    assert result.message == "Update package not found"
