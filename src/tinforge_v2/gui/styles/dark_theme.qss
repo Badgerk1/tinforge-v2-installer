@@ -1,0 +1,10 @@
+QMainWindow { background-color: #1f2329; color: #f0f6fc; }
+QWidget { color: #f0f6fc; background-color: #1f2329; font-size: 10pt; }
+QMenuBar, QMenu, QStatusBar, QToolBar { background-color: #22272e; color: #f0f6fc; }
+QPushButton, QComboBox, QLineEdit, QTreeView, QTreeWidget, QListWidget, QTextEdit, QPlainTextEdit {
+  background-color: #2d333b; color: #f0f6fc; border: 1px solid #444c56; border-radius: 4px; padding: 4px;
+}
+QPushButton:hover { background-color: #316dca; }
+QPushButton:focus, QComboBox:focus, QLineEdit:focus, QTreeView:focus, QTreeWidget:focus, QTextEdit:focus, QPlainTextEdit:focus {
+  border: 2px solid #58a6ff;
+}

@@ -1,9 +1,5 @@
-"""About dialog."""
+"""Compatibility wrapper for about dialog."""
 
-from PyQt5.QtWidgets import QMessageBox, QWidget
+from src.tinforge_v2.gui.dialogs.about import AboutDialog, show_about
 
-from src.core.constants import APP_NAME
-
-
-def show_about(parent: QWidget) -> None:
-    QMessageBox.information(parent, f"About {APP_NAME}", f"{APP_NAME}\nProfessional installer and launcher")
+__all__ = ["AboutDialog", "show_about"]

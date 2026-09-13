@@ -34,7 +34,19 @@ case "$TARGET_PLATFORM" in
   linux)
     if command -v sudo >/dev/null 2>&1; then
       sudo apt-get update
-      sudo apt-get install -y fuse libfuse2 desktop-file-utils appstream
+      sudo apt-get install -y \
+        fuse \
+        libfuse2 \
+        desktop-file-utils \
+        appstream \
+        libxcb-icccm4 \
+        libxcb-image0 \
+        libxcb-keysyms1 \
+        libxcb-render-util0 \
+        libxcb-shape0 \
+        libxcb-xinerama0 \
+        libxcb-xkb1 \
+        libxkbcommon-x11-0
     fi
     ;;
 esac
