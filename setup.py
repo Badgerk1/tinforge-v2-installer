@@ -11,7 +11,6 @@ setup(
     install_requires=[
         "PyQt5==5.15.9",
         "PyQt5-sip==12.13.0",
-        "requests>=2.32.0,<3.0",
     ],
     entry_points={
         "console_scripts": [

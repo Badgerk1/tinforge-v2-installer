@@ -39,10 +39,13 @@ def test_main_entrypoint_inserts_src_on_sys_path():
 def test_main_executes_application_bootstrap(monkeypatch):
     import src.tinforge_v2.main as main_module
 
+    created_apps = []
+
     class FakeApp:
         def __init__(self, _args):
             self.name = None
             self.version = None
+            created_apps.append(self)
 
         def setApplicationName(self, name):
             self.name = name
@@ -66,3 +69,5 @@ def test_main_executes_application_bootstrap(monkeypatch):
 
     assert main_module.main() == 0
     assert fake_window.shown is True
+    assert created_apps[0].name == "TinForge v2"
+    assert created_apps[0].version == "2.1.0"

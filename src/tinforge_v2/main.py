@@ -13,10 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PyQt5.QtWidgets import QApplication
 
-try:
-    from tinforge_v2.ui.main_window import MainWindow
-except ImportError:
-    from ui.main_window import MainWindow
+from tinforge_v2.ui.main_window import MainWindow
 
 
 def main():

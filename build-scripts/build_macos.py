@@ -66,8 +66,10 @@ def main():
             print("ERROR: PyInstaller failed")
             return 1
 
-    app_file = "dist/TinForge-v2"
-    if not check_file_exists(app_file, "Built executable"):
+    candidates = ["dist/TinForge-v2.dmg", "dist/TinForge-v2.app", "dist/TinForge-v2"]
+    app_file = next((path for path in candidates if os.path.exists(path)), None)
+    if app_file is None:
+        print("ERROR: Built executable not found in expected macOS output paths")
         return 1
 
     if os.path.isdir(app_file):
