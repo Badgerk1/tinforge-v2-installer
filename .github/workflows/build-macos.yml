@@ -19,6 +19,13 @@ jobs:
         shell: bash
         run: bash .github/workflows/common/setup-build-env.sh macos
 
+      - name: Verify build toolchain
+        shell: bash
+        run: |
+          python --version
+          python -m pip --version
+          pyinstaller --version
+
       - name: Build installer
         shell: bash
         run: |

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-OUT_DIR="$ROOT/dist"
+OUT_DIR="${DIST_DIR:-$ROOT/dist}"
 APPDIR="$OUT_DIR/AppDir"
 APPIMAGE_PATH="$OUT_DIR/TinForge-v2.AppImage"
 APPIMAGETOOL="${APPIMAGETOOL:-$ROOT/.cache/appimagetool-x86_64.AppImage}"
