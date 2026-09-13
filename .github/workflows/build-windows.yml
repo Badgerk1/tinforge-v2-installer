@@ -19,7 +19,7 @@ jobs:
 
       - name: Setup build environment
         shell: bash
-        run: bash .github/workflows/common/setup-build-env.sh windows
+        run: .github/workflows/common/setup-build-env.sh windows
 
       - name: Build installer
         shell: bash

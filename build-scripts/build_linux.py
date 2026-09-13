@@ -32,7 +32,7 @@ def main() -> int:
     elif args.smoke_test:
         write_placeholder(destination, "linux-smoke-artifact")
     else:
-        ensure_file(source, "Linux AppImage")
+        raise FileNotFoundError(f"Expected Linux AppImage at: {source}")
 
     ensure_executable(destination)
     ensure_file(destination, "Linux artifact")

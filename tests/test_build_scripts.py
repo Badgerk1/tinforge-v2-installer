@@ -1,17 +1,31 @@
 from pathlib import Path
-import sys
+from types import SimpleNamespace
 
 import pytest
 
 
 @pytest.fixture
-def release_module():
+def release_module(monkeypatch):
     import importlib.util
 
     scripts_dir = Path(__file__).resolve().parents[1] / "build-scripts"
     module_path = scripts_dir / "create_release.py"
-    sys.path.insert(0, str(scripts_dir))
+    monkeypatch.syspath_prepend(str(scripts_dir))
     spec = importlib.util.spec_from_file_location("create_release", module_path)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
+@pytest.fixture
+def windows_build_module(monkeypatch):
+    import importlib.util
+
+    scripts_dir = Path(__file__).resolve().parents[1] / "build-scripts"
+    module_path = scripts_dir / "build_windows.py"
+    monkeypatch.syspath_prepend(str(scripts_dir))
+    spec = importlib.util.spec_from_file_location("build_windows", module_path)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
@@ -79,3 +93,26 @@ def test_build_release_notes_handles_missing_commit_history(release_module, tmp_
     notes = release_module.build_release_notes("v1.2.3", artifacts, {artifact.name: "abc123" for artifact in artifacts})
     assert "## Recent Commits" in notes
     assert "Commit history unavailable in this environment." in notes
+
+
+def test_windows_build_non_smoke_copies_expected_artifact(windows_build_module, tmp_path, monkeypatch):
+    root_dir = tmp_path / "repo"
+    root_dir.mkdir()
+    artifact_dir = tmp_path / "artifacts"
+    source = root_dir / "TinForge-v2-Setup.exe"
+    source.write_text("binary", encoding="utf-8")
+
+    monkeypatch.setattr(
+        windows_build_module,
+        "parse_args",
+        lambda: SimpleNamespace(skip_build=True, smoke_test=False),
+    )
+    monkeypatch.setattr(windows_build_module, "ROOT_DIR", root_dir)
+    monkeypatch.setattr(windows_build_module, "ARTIFACTS_DIR", artifact_dir)
+
+    result = windows_build_module.main()
+    destination = artifact_dir / "TinForge-v2-Setup.exe"
+
+    assert result == 0
+    assert destination.exists()
+    assert destination.read_text(encoding="utf-8") == "binary"
