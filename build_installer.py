@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import os
 import platform
 import subprocess
@@ -14,6 +15,9 @@ ROOT = Path(__file__).resolve().parent
 SPEC = ROOT / "build" / "pyinstaller" / "tinforge_v2.spec"
 ENTRYPOINT = ROOT / "src" / "tinforge_v2" / "main.py"
 ASSETS_DIR = ROOT / "src" / "tinforge_v2" / "assets"
+WINDOWS_NSIS = ROOT / "build" / "installers" / "windows" / "tinforge.nsi"
+MACOS_DMG_SCRIPT = ROOT / "build" / "installers" / "macos" / "build_dmg.sh"
+LINUX_APPIMAGE_SCRIPT = ROOT / "build" / "installers" / "linux" / "build_appimage.sh"
 
 
 def parse_args() -> argparse.Namespace:
@@ -36,22 +40,27 @@ def resolve_platform(target: str) -> str:
     raise ValueError(f"Unsupported host platform: {system}")
 
 
-def ensure_prerequisites() -> None:
+def ensure_prerequisites(target_platform: str) -> None:
+    if importlib.util.find_spec("PyInstaller") is None:
+        raise RuntimeError("PyInstaller is not installed in the active Python environment.")
     try:
-        subprocess.run(
-            [sys.executable, "-m", "PyInstaller", "--version"],
-            check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+        subprocess.run([sys.executable, "-m", "PyInstaller", "--version"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except subprocess.CalledProcessError as error:
-        raise RuntimeError("PyInstaller is not installed in the active Python environment.") from error
+        raise RuntimeError("PyInstaller failed to execute in the active Python environment.") from error
     if not SPEC.is_file():
         raise FileNotFoundError(f"Expected PyInstaller spec file at: {SPEC}")
     if not ENTRYPOINT.is_file():
         raise FileNotFoundError(f"Expected application entrypoint at: {ENTRYPOINT}")
     if not ASSETS_DIR.is_dir():
         raise FileNotFoundError(f"Expected assets directory at: {ASSETS_DIR}")
+    required_files = {
+        "windows": WINDOWS_NSIS,
+        "macos": MACOS_DMG_SCRIPT,
+        "linux": LINUX_APPIMAGE_SCRIPT,
+    }
+    required = required_files[target_platform]
+    if not required.is_file():
+        raise FileNotFoundError(f"Expected {target_platform} packaging script at: {required}")
 
 
 def run_pyinstaller(output_dir: Path) -> None:
@@ -63,9 +72,7 @@ def run_pyinstaller(output_dir: Path) -> None:
 
 def build_windows(output_dir: Path) -> None:
     run_pyinstaller(output_dir)
-    nsis = ROOT / "build" / "installers" / "windows" / "tinforge.nsi"
-    if nsis.exists():
-        subprocess.run(["makensis", str(nsis)], check=True, cwd=ROOT)
+    subprocess.run(["makensis", str(WINDOWS_NSIS)], check=True, cwd=ROOT)
     installer_name = "TinForge-v2-Setup.exe"
     installer_in_output = output_dir / installer_name
     if installer_in_output.is_file():
@@ -83,11 +90,9 @@ def build_windows(output_dir: Path) -> None:
 
 def build_macos(output_dir: Path) -> None:
     run_pyinstaller(output_dir)
-    dmg_script = ROOT / "build" / "installers" / "macos" / "build_dmg.sh"
-    if dmg_script.exists():
-        env = os.environ.copy()
-        env["DIST_DIR"] = str(output_dir)
-        subprocess.run(["bash", str(dmg_script)], check=True, cwd=ROOT, env=env)
+    env = os.environ.copy()
+    env["DIST_DIR"] = str(output_dir)
+    subprocess.run(["bash", str(MACOS_DMG_SCRIPT)], check=True, cwd=ROOT, env=env)
     artifact = output_dir / "TinForge-v2.dmg"
     if not artifact.exists():
         raise FileNotFoundError(f"Expected macOS DMG at: {artifact}")
@@ -95,11 +100,9 @@ def build_macos(output_dir: Path) -> None:
 
 def build_linux(output_dir: Path) -> None:
     run_pyinstaller(output_dir)
-    appimage_script = ROOT / "build" / "installers" / "linux" / "build_appimage.sh"
-    if appimage_script.exists():
-        env = os.environ.copy()
-        env["DIST_DIR"] = str(output_dir)
-        subprocess.run(["bash", str(appimage_script)], check=True, cwd=ROOT, env=env)
+    env = os.environ.copy()
+    env["DIST_DIR"] = str(output_dir)
+    subprocess.run(["bash", str(LINUX_APPIMAGE_SCRIPT)], check=True, cwd=ROOT, env=env)
 
     artifact = output_dir / "TinForge-v2.AppImage"
     if not artifact.exists():
@@ -117,7 +120,8 @@ def stamp_artifacts(output_dir: Path, version: str) -> None:
 
 def main() -> int:
     args = parse_args()
-    ensure_prerequisites()
+    selected = resolve_platform(args.platform)
+    ensure_prerequisites(selected)
     args.output.mkdir(parents=True, exist_ok=True)
 
     builders = {
@@ -125,7 +129,6 @@ def main() -> int:
         "macos": build_macos,
         "linux": build_linux,
     }
-    selected = resolve_platform(args.platform)
     builders[selected](args.output)
     stamp_artifacts(args.output, args.version)
     print(f"Build complete for {selected} {args.version}")
