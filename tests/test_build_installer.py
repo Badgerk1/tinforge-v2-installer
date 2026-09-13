@@ -75,3 +75,15 @@ def test_build_windows_copies_nsis_output_to_output_dir(monkeypatch, tmp_path):
     copied = output_dir / "TinForge-v2-Setup.exe"
     assert copied.is_file()
     assert copied.read_text(encoding="utf-8") == "exe"
+
+
+def test_build_windows_fails_when_installer_missing(monkeypatch, tmp_path):
+    output_dir = tmp_path / "dist-out"
+    output_dir.mkdir()
+
+    monkeypatch.setattr(build_installer, "run_pyinstaller", lambda _output_dir: None)
+    monkeypatch.setattr(build_installer, "ROOT", tmp_path)
+    monkeypatch.setattr(build_installer.subprocess, "run", lambda *_args, **_kwargs: None)
+
+    with pytest.raises(FileNotFoundError, match="Expected Windows installer"):
+        build_installer.build_windows(output_dir)

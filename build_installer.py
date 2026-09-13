@@ -60,7 +60,9 @@ def build_windows(output_dir: Path) -> None:
     if nsis.exists():
         subprocess.run(["makensis", str(nsis)], check=True, cwd=ROOT)
     installer = ROOT / "TinForge-v2-Setup.exe"
-    if installer.is_file() and installer.parent != output_dir:
+    if not installer.is_file():
+        raise FileNotFoundError(f"Expected Windows installer at: {installer}")
+    if installer.parent != output_dir:
         copy2(installer, output_dir / installer.name)
 
 
