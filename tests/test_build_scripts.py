@@ -32,6 +32,34 @@ def windows_build_module(monkeypatch):
     return module
 
 
+@pytest.fixture
+def macos_build_module(monkeypatch):
+    import importlib.util
+
+    scripts_dir = Path(__file__).resolve().parents[1] / "build-scripts"
+    module_path = scripts_dir / "build_macos.py"
+    monkeypatch.syspath_prepend(str(scripts_dir))
+    spec = importlib.util.spec_from_file_location("build_macos", module_path)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
+@pytest.fixture
+def linux_build_module(monkeypatch):
+    import importlib.util
+
+    scripts_dir = Path(__file__).resolve().parents[1] / "build-scripts"
+    module_path = scripts_dir / "build_linux.py"
+    monkeypatch.syspath_prepend(str(scripts_dir))
+    spec = importlib.util.spec_from_file_location("build_linux", module_path)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
 def test_sha256sum_returns_hash(release_module, tmp_path):
     sample = tmp_path / "sample.bin"
     sample.write_bytes(b"tinforge")
@@ -116,3 +144,54 @@ def test_windows_build_non_smoke_copies_expected_artifact(windows_build_module, 
     assert result == 0
     assert destination.exists()
     assert destination.read_text(encoding="utf-8") == "binary"
+
+
+def test_macos_build_non_smoke_copies_expected_artifact(macos_build_module, tmp_path, monkeypatch):
+    root_dir = tmp_path / "repo"
+    dist_dir = root_dir / "dist"
+    dist_dir.mkdir(parents=True)
+    artifact_dir = tmp_path / "artifacts"
+    source = dist_dir / "TinForge-v2.dmg"
+    source.write_text("dmg", encoding="utf-8")
+
+    monkeypatch.setattr(
+        macos_build_module,
+        "parse_args",
+        lambda: SimpleNamespace(skip_build=True, smoke_test=False),
+    )
+    monkeypatch.setattr(macos_build_module, "ROOT_DIR", root_dir)
+    monkeypatch.setattr(macos_build_module, "DIST_DIR", dist_dir)
+    monkeypatch.setattr(macos_build_module, "ARTIFACTS_DIR", artifact_dir)
+
+    result = macos_build_module.main()
+    destination = artifact_dir / "TinForge-v2.dmg"
+
+    assert result == 0
+    assert destination.exists()
+    assert destination.read_text(encoding="utf-8") == "dmg"
+
+
+def test_linux_build_non_smoke_copies_and_sets_executable(linux_build_module, tmp_path, monkeypatch):
+    root_dir = tmp_path / "repo"
+    dist_dir = root_dir / "dist"
+    dist_dir.mkdir(parents=True)
+    artifact_dir = tmp_path / "artifacts"
+    source = dist_dir / "TinForge-v2.AppImage"
+    source.write_text("appimage", encoding="utf-8")
+
+    monkeypatch.setattr(
+        linux_build_module,
+        "parse_args",
+        lambda: SimpleNamespace(skip_build=True, smoke_test=False),
+    )
+    monkeypatch.setattr(linux_build_module, "ROOT_DIR", root_dir)
+    monkeypatch.setattr(linux_build_module, "DIST_DIR", dist_dir)
+    monkeypatch.setattr(linux_build_module, "ARTIFACTS_DIR", artifact_dir)
+
+    result = linux_build_module.main()
+    destination = artifact_dir / "TinForge-v2.AppImage"
+
+    assert result == 0
+    assert destination.exists()
+    assert destination.read_text(encoding="utf-8") == "appimage"
+    assert destination.stat().st_mode & 0o111

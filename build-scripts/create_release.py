@@ -81,6 +81,8 @@ def main() -> int:
     args = parse_args()
     artifacts = collect_artifacts(args.artifacts_dir)
     checksums = {artifact.name: sha256sum(artifact) for artifact in artifacts}
+    args.checksums_file.parent.mkdir(parents=True, exist_ok=True)
+    args.notes_file.parent.mkdir(parents=True, exist_ok=True)
 
     args.checksums_file.write_text(
         "".join(f"{value}  {name}\n" for name, value in checksums.items()),
