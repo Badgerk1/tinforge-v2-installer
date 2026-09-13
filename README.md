@@ -8,8 +8,8 @@ Professional installer and launcher system for TinForge v2.
 - Platform installer pipelines:
   - Windows: NSIS (`TinForge-v2-Setup.exe`)
   - macOS: DMG (`TinForge-v2.dmg`)
-  - Linux: AppImage (`TinForge-v2.AppImage`)
-- PyQt5 GUI shell with project manager, export wizard, settings dialog, and about dialog
+  - Linux: portable launcher artifact (`TinForge-v2.AppImage`)
+- PyQt5 GUI shell with project manager, file browser, preview panel, export wizard, settings dialog, and about dialog
 - Auto-update scaffolding based on GitHub releases
 - Build scripts and GitHub Actions workflows for multi-platform release automation
 
@@ -24,7 +24,7 @@ python -m pytest tests/test_app_manager.py tests/test_updater.py tests/test_inte
 Run local app:
 
 ```bash
-python -m src.main
+PYTHONPATH=src python -m tinforge_v2.main
 ```
 
 Build installer for current OS:
@@ -35,15 +35,9 @@ python build_installer.py --platform auto --version 0.1.0
 
 ## Project layout
 
-This repository follows the full installer-oriented layout with:
-
-- `src/` GUI + core + updater modules
+- `src/tinforge_v2/` packageable GUI application, core services, utilities, styles, and assets
 - `build/` PyInstaller specs, installer templates, branding, and scripts
 - `resources/` docs, licenses, and sample data
-- `tests/` targeted tests for core/updater/gui stubs
+- `tests/` targeted tests for core/updater/gui/build behavior
 - `config/` default app settings and version metadata
 - `.github/workflows/` CI build/release automation
-
-## Notes
-
-Branding image/icon files are currently placeholders and can be replaced directly under `build/branding/` and `build/installers/**`.

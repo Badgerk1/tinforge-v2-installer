@@ -1,12 +1,6 @@
 """TinForge v2 installer application entry point."""
 
-from src.core.app_manager import AppManager
-from src.gui.main_window import run_app
-
-
-def main() -> int:
-    manager = AppManager()
-    return run_app(manager)
+from src.tinforge_v2.main import main
 
 
 if __name__ == "__main__":

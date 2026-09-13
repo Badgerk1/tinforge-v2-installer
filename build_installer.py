@@ -6,9 +6,8 @@ import argparse
 import os
 import platform
 import subprocess
-from shutil import copy2
 from pathlib import Path
-
+from shutil import copy2
 
 ROOT = Path(__file__).resolve().parent
 SPEC = ROOT / "build" / "pyinstaller" / "tinforge_v2.spec"
@@ -31,36 +30,49 @@ def resolve_platform(target: str) -> str:
         return "macos"
     if system in {"windows", "linux"}:
         return system
-
-    msg = f"Unsupported host platform: {system}"
-    raise ValueError(msg)
+    raise ValueError(f"Unsupported host platform: {system}")
 
 
 def run_pyinstaller(output_dir: Path) -> None:
     env = os.environ.copy()
     env["PYINSTALLER_DISTPATH"] = str(output_dir)
-    subprocess.run(["pyinstaller", str(SPEC), "--clean"], check=True, env=env)
+    env["PYTHONPATH"] = os.pathsep.join(filter(None, [str(ROOT / "src"), env.get("PYTHONPATH", "")]))
+    subprocess.run(["pyinstaller", str(SPEC), "--clean", "--noconfirm"], check=True, cwd=ROOT, env=env)
 
 
 def build_windows(output_dir: Path) -> None:
     run_pyinstaller(output_dir)
     nsis = ROOT / "build" / "installers" / "windows" / "tinforge.nsi"
     if nsis.exists():
-        subprocess.run(["makensis", str(nsis)], check=True)
+        subprocess.run(["makensis", str(nsis)], check=True, cwd=ROOT)
 
 
 def build_macos(output_dir: Path) -> None:
     run_pyinstaller(output_dir)
     dmg_script = ROOT / "build" / "installers" / "macos" / "build_dmg.sh"
     if dmg_script.exists():
-        subprocess.run(["bash", str(dmg_script)], check=True)
+        subprocess.run(["bash", str(dmg_script)], check=True, cwd=ROOT)
 
 
 def build_linux(output_dir: Path) -> None:
     run_pyinstaller(output_dir)
     appimage_script = ROOT / "build" / "installers" / "linux" / "build_appimage.sh"
     if appimage_script.exists():
-        subprocess.run(["bash", str(appimage_script)], check=True)
+        subprocess.run(["bash", str(appimage_script)], check=True, cwd=ROOT)
+
+    executable = output_dir / "tinforge-v2" / "tinforge-v2"
+    if not executable.exists():
+        raise FileNotFoundError(f"Expected Linux executable at: {executable}")
+
+    artifact = output_dir / "TinForge-v2.AppImage"
+    artifact.write_text(
+        "#!/usr/bin/env bash\n"
+        "set -euo pipefail\n"
+        "SELF_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"\n"
+        "exec \"$SELF_DIR/tinforge-v2/tinforge-v2\" \"$@\"\n",
+        encoding="utf-8",
+    )
+    artifact.chmod(artifact.stat().st_mode | 0o111)
 
 
 def stamp_artifacts(output_dir: Path, version: str) -> None:
@@ -76,12 +88,12 @@ def main() -> int:
     args = parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
 
-    selected = resolve_platform(args.platform)
     builders = {
         "windows": build_windows,
         "macos": build_macos,
         "linux": build_linux,
     }
+    selected = resolve_platform(args.platform)
     builders[selected](args.output)
     stamp_artifacts(args.output, args.version)
     print(f"Build complete for {selected} {args.version}")
