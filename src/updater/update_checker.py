@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
 from src.core.version import VersionManager
@@ -26,7 +26,7 @@ class UpdateChecker:
         try:
             with urlopen(endpoint, timeout=5) as response:  # noqa: S310
                 payload = json.loads(response.read().decode("utf-8"))
-        except URLError:
+        except (URLError, HTTPError, TimeoutError, ValueError, json.JSONDecodeError):
             return None
 
         candidate = str(payload.get("tag_name", "")).lstrip("v")

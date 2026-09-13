@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import platform
 import subprocess
+import sys
 from pathlib import Path
 
 
@@ -38,7 +39,10 @@ def main() -> int:
     args = parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     builder = pick_builder(args.platform)
-    subprocess.run(["python", str(builder)], check=True)
+    subprocess.run(
+        [sys.executable, str(builder), "--version", args.version, "--output", str(args.output)],
+        check=True,
+    )
     print(f"Build complete for {args.platform} {args.version}")
     return 0
 

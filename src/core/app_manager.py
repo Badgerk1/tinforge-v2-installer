@@ -10,6 +10,14 @@ from src.core.config import ConfigManager
 from src.core.constants import DEFAULT_EXPORT_FORMATS
 from src.core.version import VersionManager
 
+EXTENSION_MAP = {
+    "TP3": "tp3",
+    "DBX": "dbx",
+    "LandXML": "xml",
+    "DXF": "dxf",
+    "CSV": "csv",
+}
+
 
 @dataclass
 class Project:
@@ -47,7 +55,7 @@ class AppManager:
         generated: list[Path] = []
         safe_name = self.current_project.name.replace(" ", "_").lower()
         for fmt in selected_formats:
-            ext = fmt.lower().replace("landxml", "xml")
+            ext = EXTENSION_MAP.get(fmt, fmt.lower())
             output_file = out_dir / f"{safe_name}.{ext}"
             output_file.write_text(f"TinForge export placeholder for {fmt}\n", encoding="utf-8")
             generated.append(output_file)

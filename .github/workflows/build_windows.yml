@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -15,4 +17,4 @@ jobs:
           python-version: '3.11'
       - run: pip install -r requirements-build.txt
       - run: pip install -r requirements.txt
-      - run: python build/pyinstaller/build_windows.py
+      - run: python build_installer.py --platform windows

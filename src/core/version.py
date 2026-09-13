@@ -35,7 +35,7 @@ class VersionManager:
     @staticmethod
     def is_newer(candidate: str, current: str) -> bool:
         def _parts(value: str) -> tuple[int, ...]:
-            normalized = value.split("-")[0].split("+")[0]
+            normalized = value.lstrip("v").split("-")[0].split("+")[0]
             return tuple(int(part) for part in normalized.split("."))
 
         return _parts(candidate) > _parts(current)
