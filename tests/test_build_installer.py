@@ -11,6 +11,17 @@ def test_ensure_prerequisites_requires_pyinstaller(monkeypatch):
         build_installer.ensure_prerequisites("linux")
 
 
+def test_ensure_prerequisites_fails_when_pyinstaller_cannot_execute(monkeypatch):
+    monkeypatch.setattr(build_installer.importlib.util, "find_spec", lambda _name: object())
+
+    def fail_run(*_args, **_kwargs):
+        raise build_installer.subprocess.CalledProcessError(returncode=1, cmd="PyInstaller --version")
+
+    monkeypatch.setattr(build_installer.subprocess, "run", fail_run)
+    with pytest.raises(RuntimeError, match="PyInstaller failed to execute"):
+        build_installer.ensure_prerequisites("linux")
+
+
 def test_build_linux_uses_output_dir_for_packaging(monkeypatch, tmp_path):
     output_dir = tmp_path / "dist-out"
     output_dir.mkdir()
@@ -84,13 +95,20 @@ def test_build_windows_copies_nsis_output_to_output_dir(monkeypatch, tmp_path):
 
     monkeypatch.setattr(build_installer, "run_pyinstaller", lambda _output_dir: None)
     monkeypatch.setattr(build_installer, "ROOT", tmp_path)
-    monkeypatch.setattr(build_installer, "WINDOWS_NSIS", tmp_path / "tinforge.nsi")
-    monkeypatch.setattr(build_installer.subprocess, "run", lambda *_args, **_kwargs: None)
+    nsis = tmp_path / "tinforge.nsi"
+    monkeypatch.setattr(build_installer, "WINDOWS_NSIS", nsis)
+    calls = []
+    monkeypatch.setattr(
+        build_installer.subprocess,
+        "run",
+        lambda command, check, cwd: calls.append((command, check, cwd)),
+    )
 
     build_installer.build_windows(output_dir)
     copied = output_dir / "TinForge-v2-Setup.exe"
     assert copied.is_file()
     assert copied.read_text(encoding="utf-8") == "exe"
+    assert calls == [(["makensis", str(nsis)], True, tmp_path)]
 
 
 def test_build_windows_fails_when_installer_missing(monkeypatch, tmp_path):
