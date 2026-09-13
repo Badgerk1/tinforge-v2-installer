@@ -25,3 +25,12 @@ def test_main_entrypoint_module_loads_without_import_errors():
     assert spec.loader is not None
     spec.loader.exec_module(module)
     assert callable(module.main)
+
+
+def test_main_entrypoint_inserts_src_on_sys_path():
+    main_path = Path(__file__).resolve().parents[1] / "src" / "tinforge_v2" / "main.py"
+    spec = importlib.util.spec_from_file_location("tinforge_v2_main_path", main_path)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    assert str(main_path.parent.parent) in module.sys.path

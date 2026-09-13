@@ -37,6 +37,6 @@ jobs:
       - name: Upload to release
         uses: softprops/action-gh-release@v1
         with:
-          files: .artifacts/TinForge-v2.dmg
+          files: .artifacts/TinForge-v2-macos
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

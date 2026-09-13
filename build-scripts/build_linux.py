@@ -8,7 +8,7 @@ import sys
 from utils import check_file_exists, check_python_version, run_command
 
 
-ARTIFACT_PATH = ".artifacts/TinForge-v2.AppImage"
+ARTIFACT_PATH = ".artifacts/TinForge-v2-linux"
 
 
 def parse_args():
@@ -71,6 +71,8 @@ def main():
         return 1
 
     shutil.copy2(app_file, ARTIFACT_PATH)
+    mode = os.stat(ARTIFACT_PATH).st_mode
+    os.chmod(ARTIFACT_PATH, mode | 0o111)
     if not check_file_exists(ARTIFACT_PATH, "Staged installer artifact"):
         return 1
 
