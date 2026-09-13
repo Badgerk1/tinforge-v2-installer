@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=TinForge v2
+Comment=Professional installer and launcher
+Exec=tinforge-v2
+Icon=tinforge
+Terminal=false
+Categories=Utility;Science;

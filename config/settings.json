@@ -1,0 +1,6 @@
+{
+  "theme": "dark",
+  "language": "en",
+  "auto_update": true,
+  "default_export_formats": ["TP3", "DBX", "LandXML"]
+}

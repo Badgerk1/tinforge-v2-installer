@@ -1,0 +1,34 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            target: windows
+          - os: macos-latest
+            target: macos
+          - os: ubuntu-latest
+            target: linux
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements-build.txt
+      - run: pip install -r requirements.txt
+      - run: python build_installer.py --platform ${{ matrix.target }}
+      - name: Upload release artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python -c "from pathlib import Path; import os, subprocess; files=[str(p) for p in Path('dist').glob('*') if p.is_file()]; root=Path('TinForge-v2-Setup.exe'); files += [str(root)] if root.is_file() else []; assert files, 'No release artifacts found'; subprocess.run(['gh','release','upload',os.environ['RELEASE_TAG'],*files,'--clobber'], check=True)"
