@@ -20,7 +20,7 @@ from PyQt5.QtWidgets import (
 )
 
 from ..core.config import ConfigManager
-from ..core.constants import APP_NAME, PROJECT_FILE_SUFFIX
+from ..core.constants import APP_NAME, PROJECT_FILE_SUFFIX, SUPPORTED_SOURCE_DIALOG_FILTER
 from ..core.project import ProjectManager
 from ..utils.validators import is_project_file, is_supported_source
 from .dialogs.about import show_about
@@ -241,7 +241,7 @@ class MainWindow(QMainWindow):
 
     def import_files(self) -> None:
         default_dir = self.file_browser.location.text().strip() or self.config.get("default_project_dir", "")
-        files, _ = QFileDialog.getOpenFileNames(self, "Select source files", default_dir, "Data Files (*.csv *.pdf *.txt *.xml *.dxf *.dbx *.tp3)")
+        files, _ = QFileDialog.getOpenFileNames(self, "Select source files", default_dir, SUPPORTED_SOURCE_DIALOG_FILTER)
         if not files:
             return
         project = self._merge_project_sources(files)

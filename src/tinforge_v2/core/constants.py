@@ -11,7 +11,9 @@ APP_SLUG = "tinforge-v2"
 ORG_NAME = "Badgerk1"
 PROJECT_FILE_SUFFIX = ".tinforge-project.json"
 DEFAULT_EXPORT_FORMATS = ["TP3", "DBX", "LandXML", "DXF", "CSV"]
-SUPPORTED_SOURCE_EXTENSIONS = {".csv", ".pdf", ".txt", ".xml", ".dxf", ".dbx", ".tp3"}
+SUPPORTED_SOURCE_EXTENSIONS = (".csv", ".pdf", ".txt", ".xml", ".dxf", ".dbx", ".tp3")
+SUPPORTED_SOURCE_NAME_FILTERS = [f"*{ext}" for ext in SUPPORTED_SOURCE_EXTENSIONS]
+SUPPORTED_SOURCE_DIALOG_FILTER = f"Data Files ({' '.join(SUPPORTED_SOURCE_NAME_FILTERS)})"
 RECENT_PROJECTS_LIMIT = 10
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]

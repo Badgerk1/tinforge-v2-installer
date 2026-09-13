@@ -16,6 +16,8 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
+from ...core.constants import SUPPORTED_SOURCE_NAME_FILTERS
+
 
 class FileBrowserWidget(QWidget):
     fileActivated = pyqtSignal(str)
@@ -60,7 +62,7 @@ class FileBrowserWidget(QWidget):
     def apply_filter(self) -> None:
         selected = self.filter_box.currentText()
         if selected == "Data files":
-            filters = ["*.csv", "*.pdf", "*.txt", "*.xml", "*.dxf", "*.dbx", "*.tp3"]
+            filters = SUPPORTED_SOURCE_NAME_FILTERS
         elif selected == "Project files":
             filters = ["*.tinforge-project.json"]
         else:

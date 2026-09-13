@@ -20,8 +20,9 @@ except ImportError:  # pragma: no cover
 
 def setup_logging(config: dict[str, object] | None = None) -> logging.Logger:
     """Setup application logging."""
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     level = str((config or {}).get("logging_level", "INFO"))
+    resolved_level = getattr(logging, level.upper(), logging.INFO)
+    logging.basicConfig(level=resolved_level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     return setup_logger(__name__, level=level)
 
 
