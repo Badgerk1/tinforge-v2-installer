@@ -55,7 +55,7 @@ class FileBrowserWidget(QWidget):
         if not path.exists():
             return
         self.location.setText(str(path))
-        self.view.setRootIndex(self.model.index(str(path)))
+        self.view.setRootIndex(self.model.setRootPath(str(path)))
 
     def apply_filter(self) -> None:
         selected = self.filter_box.currentText()
@@ -72,7 +72,7 @@ class FileBrowserWidget(QWidget):
         path = self.model.filePath(index)
         if Path(path).is_dir():
             self.location.setText(path)
-            self.view.setRootIndex(index)
+            self.view.setRootIndex(self.model.setRootPath(path))
             return
         if Path(path).is_file():
             self.fileActivated.emit(path)

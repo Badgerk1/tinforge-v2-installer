@@ -1,10 +1,12 @@
 from pathlib import Path
 import importlib.resources
+import sys
 
 from src.tinforge_v2.core.config import ConfigManager
 from src.tinforge_v2.core.project import ProjectManager
 from src.tinforge_v2.core.version import VersionManager
 from src.tinforge_v2.gui.styles import DARK_THEME, LIGHT_THEME, load_theme
+from src.tinforge_v2.utils.logger import setup_logger
 
 
 def test_config_manager_persists_recent_projects(tmp_path: Path):
@@ -47,6 +49,7 @@ def test_version_manager_handles_prerelease_and_non_numeric_segments():
     assert VersionManager.is_newer("1.0rc1", "1.0.0") is False
     assert VersionManager.is_newer("1.0rc2", "1.0rc1") is True
     assert VersionManager.is_newer("1.0rc2", "1.0-rc1") is True
+    assert VersionManager.is_newer("1.0rc10", "1.0rc2") is True
 
 
 def test_package_assets_are_discoverable():
@@ -55,3 +58,15 @@ def test_package_assets_are_discoverable():
     assert (styles_root / "dark_theme.qss").is_file()
     assert (styles_root / "light_theme.qss").is_file()
     assert (assets_root / "assets" / "icons" / "app.png").is_file()
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+    installed_styles_root = importlib.resources.files("tinforge_v2.gui.styles")
+    installed_assets_root = importlib.resources.files("tinforge_v2")
+    assert (installed_styles_root / "dark_theme.qss").is_file()
+    assert (installed_assets_root / "assets" / "icons" / "app.png").is_file()
+
+
+def test_setup_logger_reuses_existing_file_handler():
+    logger = setup_logger("tinforge_test_reuse", "DEBUG")
+    logger = setup_logger("tinforge_test_reuse", "ERROR")
+    assert logger.level > 0
+    assert len([handler for handler in logger.handlers if getattr(handler, "baseFilename", "").endswith("tinforge-v2.log")]) == 1

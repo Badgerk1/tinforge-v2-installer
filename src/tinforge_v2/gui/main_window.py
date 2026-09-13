@@ -244,17 +244,14 @@ class MainWindow(QMainWindow):
         files, _ = QFileDialog.getOpenFileNames(self, "Select source files", default_dir, "Data Files (*.csv *.pdf *.txt *.xml *.dxf *.dbx *.tp3)")
         if not files:
             return
-        current = self.project_manager.current_project
-        if current is None:
-            project = self.project_manager.import_files(Path(files[0]).stem, files)
-        else:
-            existing = [str(path) for path in current.source_files]
-            merged = existing + [path for path in files if path not in existing]
-            project = self.project_manager.import_files(current.name, merged)
+        project = self._merge_project_sources(files)
         self.statusBar().showMessage(f"Loaded {len(project.source_files)} source files")
         self._update_project_views()
 
     def export_project(self) -> None:
+        if self.project_manager.current_project is None:
+            QMessageBox.information(self, "Export project", "Create or open a project first.")
+            return
         wizard = ExportWizard(self)
         if wizard.exec_() != wizard.Accepted:
             return
@@ -317,13 +314,15 @@ class MainWindow(QMainWindow):
         sources = [path for path in urls if is_supported_source(path)]
         if not sources:
             return
-        current = self.project_manager.current_project
-        if current is None:
-            self.project_manager.import_files(Path(sources[0]).stem, sources)
-        else:
-            existing = [str(path) for path in current.source_files]
-            merged = existing + [path for path in sources if path not in existing]
-            self.project_manager.import_files(current.name, merged)
+        self._merge_project_sources(sources)
         self.statusBar().showMessage(f"Loaded {len(sources)} dropped files")
         self._update_project_views()
         event.acceptProposedAction()
+
+    def _merge_project_sources(self, sources: list[str]) -> object:
+        current = self.project_manager.current_project
+        if current is None:
+            return self.project_manager.import_files(Path(sources[0]).stem, sources)
+        existing = [str(path) for path in current.source_files]
+        merged = existing + [path for path in sources if path not in existing]
+        return self.project_manager.import_files(current.name, merged)

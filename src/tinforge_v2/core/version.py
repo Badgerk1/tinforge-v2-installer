@@ -39,6 +39,12 @@ class VersionManager:
             match = re.match(r"(\d+)", segment)
             return int(match.group(1)) if match else 0
 
+        def _normalize_prerelease(parts: tuple[str, ...]) -> tuple[str, ...]:
+            normalized: list[str] = []
+            for part in parts:
+                normalized.extend(token for token in re.findall(r"[A-Za-z]+|\d+", part) if token)
+            return tuple(normalized)
+
         def _parse(value: str) -> tuple[tuple[int, ...], tuple[str, ...]]:
             normalized = value.lstrip("v").split("+")[0]
             core, _, prerelease = normalized.partition("-")
@@ -50,7 +56,7 @@ class VersionManager:
                     core_segments[-1] = tail_match.group("number")
                     prerelease_parts = tuple(filter(None, re.split(r"[.-]", tail_match.group("suffix")))) + prerelease_parts
             core_parts = tuple(_numeric_prefix(part) for part in core_segments)
-            return core_parts, prerelease_parts
+            return core_parts, _normalize_prerelease(prerelease_parts)
 
         def _compare_prerelease(left: tuple[str, ...], right: tuple[str, ...]) -> int:
             if not left and not right:

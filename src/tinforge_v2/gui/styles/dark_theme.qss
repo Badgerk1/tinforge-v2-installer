@@ -6,5 +6,6 @@ QPushButton, QComboBox, QLineEdit, QTreeView, QTreeWidget, QListWidget, QTextEdi
 }
 QPushButton:hover { background-color: #316dca; }
 QPushButton:focus, QComboBox:focus, QLineEdit:focus, QTreeView:focus, QTreeWidget:focus, QTextEdit:focus, QPlainTextEdit:focus {
-  border: 1px solid #58a6ff;
+  border: 2px solid #58a6ff;
+  outline: none;
 }
