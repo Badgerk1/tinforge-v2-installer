@@ -42,7 +42,7 @@ def build_windows() -> None:
     run_pyinstaller()
     nsis = ROOT / "build" / "installers" / "windows" / "tinforge.nsi"
     if nsis.exists():
-        subprocess.run(["makensis", str(nsis)], check=False)
+        subprocess.run(["makensis", str(nsis)], check=True)
 
 
 def build_macos() -> None:

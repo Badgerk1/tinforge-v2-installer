@@ -38,4 +38,9 @@ class VersionManager:
             normalized = value.lstrip("v").split("-")[0].split("+")[0]
             return tuple(int(part) for part in normalized.split("."))
 
-        return _parts(candidate) > _parts(current)
+        candidate_parts = _parts(candidate)
+        current_parts = _parts(current)
+        width = max(len(candidate_parts), len(current_parts))
+        padded_candidate = candidate_parts + (0,) * (width - len(candidate_parts))
+        padded_current = current_parts + (0,) * (width - len(current_parts))
+        return padded_candidate > padded_current

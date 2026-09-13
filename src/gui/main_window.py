@@ -124,6 +124,8 @@ class MainWindow(QMainWindow):
     def dragEnterEvent(self, event):  # noqa: N802
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
+        else:
+            event.ignore()
 
     def dropEvent(self, event):  # noqa: N802
         sources = [u.toLocalFile() for u in event.mimeData().urls() if Path(u.toLocalFile()).suffix.lower() in {".csv", ".pdf"}]
