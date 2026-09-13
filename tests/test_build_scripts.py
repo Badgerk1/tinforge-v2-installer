@@ -2,6 +2,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import importlib.util
+import yaml
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -140,13 +141,20 @@ def test_platform_workflows_support_release_and_reusable_upload_paths():
     }
 
     for filename, (artifact_name, artifact_path) in workflows.items():
-        content = (REPO_ROOT / ".github" / "workflows" / filename).read_text(encoding="utf-8")
-        assert "workflow_call:" in content
-        assert "workflow_dispatch:" in content
-        assert "if: github.event_name != 'release'" in content
-        assert "uses: actions/upload-artifact@v4" in content
-        assert f"name: {artifact_name}" in content
-        assert f"path: {artifact_path}" in content
-        assert "if: github.event_name == 'release'" in content
-        assert "uses: softprops/action-gh-release@v1" in content
-        assert f"files: {artifact_path}" in content
+        workflow = yaml.safe_load((REPO_ROOT / ".github" / "workflows" / filename).read_text(encoding="utf-8"))
+        triggers = workflow.get("on", workflow.get(True))
+        assert triggers is not None
+        assert "workflow_call" in triggers
+        assert "workflow_dispatch" in triggers
+
+        steps = workflow["jobs"]["build"]["steps"]
+        upload_artifact = next(step for step in steps if step["name"] == "Upload workflow artifact")
+        assert upload_artifact["if"] == "github.event_name != 'release'"
+        assert upload_artifact["uses"] == "actions/upload-artifact@v4"
+        assert upload_artifact["with"]["name"] == artifact_name
+        assert upload_artifact["with"]["path"] == artifact_path
+
+        upload_release = next(step for step in steps if step["name"] == "Upload to release")
+        assert upload_release["if"] == "github.event_name == 'release'"
+        assert upload_release["uses"] == "softprops/action-gh-release@v1"
+        assert upload_release["with"]["files"] == artifact_path
