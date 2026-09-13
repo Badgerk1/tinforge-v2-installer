@@ -34,9 +34,15 @@ class UpdateChecker:
             return None
 
         if VersionManager.is_newer(candidate, current_version):
+            assets = payload.get("assets") or []
+            download_url = ""
+            if assets:
+                download_url = str(assets[0].get("browser_download_url", ""))
+            if not download_url:
+                download_url = str(payload.get("html_url", ""))
             return UpdateInfo(
                 version=candidate,
-                url=str(payload.get("html_url", "")),
+                url=download_url,
                 notes=str(payload.get("body", "")).strip(),
             )
         return None

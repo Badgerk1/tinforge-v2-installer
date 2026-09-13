@@ -130,9 +130,11 @@ class MainWindow(QMainWindow):
 
 
 def run_app(manager: AppManager) -> int:
-    app = QApplication.instance() or QApplication([])
+    app = QApplication.instance()
+    if app is None:
+        QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+        app = QApplication([])
     app.setStyleSheet(DARK_THEME)
-    app.setAttribute(Qt.AA_UseHighDpiPixmaps)
     window = MainWindow(manager)
     window.show()
     return app.exec_()

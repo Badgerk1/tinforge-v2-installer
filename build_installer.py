@@ -32,7 +32,11 @@ def pick_builder(target: str) -> Path:
     if target not in mapping:
         msg = f"Unsupported platform: {target}"
         raise ValueError(msg)
-    return mapping[target]
+    builder = mapping[target]
+    if not builder.exists():
+        msg = f"Builder script not found: {builder}"
+        raise FileNotFoundError(msg)
+    return builder
 
 
 def main() -> int:

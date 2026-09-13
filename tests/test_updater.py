@@ -22,6 +22,16 @@ def test_update_installer_accepts_supported_package(tmp_path):
     assert result.success is True
 
 
+def test_update_installer_accepts_dmg_and_appimage(tmp_path):
+    dmg = tmp_path / "update.dmg"
+    dmg.write_text("x", encoding="utf-8")
+    appimage = tmp_path / "update.appimage"
+    appimage.write_text("x", encoding="utf-8")
+
+    assert UpdateInstaller().install(dmg).success is True
+    assert UpdateInstaller().install(appimage).success is True
+
+
 def test_update_installer_rejects_missing_package(tmp_path):
     result = UpdateInstaller().install(tmp_path / "missing.exe")
     assert result.success is False

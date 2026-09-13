@@ -17,6 +17,6 @@ class UpdateInstaller:
         package = Path(package_path)
         if not package.exists():
             return InstallResult(False, "Update package not found")
-        if package.suffix not in {".exe", ".dmg", ".AppImage"}:
+        if package.suffix.lower() not in {".exe", ".dmg", ".appimage"}:
             return InstallResult(False, "Unsupported package format")
         return InstallResult(True, f"Ready to install {package.name}")
